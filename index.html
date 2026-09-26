@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>订单导出 · 把电商订单变成可用的账本</title>
+<style>
+  :root{
+    --ink:#0d0d0f; --ink2:#424245; --gray:#6e6e73; --gray3:#8e8e93;
+    --line:#e5e5ea; --line2:#f0f0f3;
+    --bg:#ffffff; --bg2:#fafafa; --bg3:#f5f5f7;
+    --blue:#0071e3; --blue-d:#0062c4;
+    --ok:#30a34a; --todo:#c7992a; --no:#c93c3c;
+    --nav-h:52px;
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  html{scroll-behavior:smooth;scroll-padding-top:76px}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:400 16px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text",
+         "PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+    letter-spacing:-.005em;
+  }
+  a{color:inherit}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 28px}
+  @media(max-width:640px){.wrap{padding:0 18px}}
+
+  /* ---------- 顶部导航 ---------- */
+  nav{
+    position:sticky;top:0;z-index:100;height:var(--nav-h);
+    background:rgba(255,255,255,.78);backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid var(--line2);
+  }
+  nav .in{max-width:1040px;margin:0 auto;padding:0 28px;height:100%;
+    display:flex;align-items:center;gap:28px}
+  @media(max-width:640px){nav .in{padding:0 18px;gap:18px}}
+  .brand{display:flex;align-items:center;gap:9px;font-size:15px;
+    font-weight:600;letter-spacing:-.012em;text-decoration:none;flex:none}
+  .brand .dot{width:20px;height:20px;border-radius:6px;
+    background:linear-gradient(135deg,#0071e3,#00c6fb);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:11px;font-weight:700}
+  nav .links{display:flex;gap:24px;margin-left:auto;font-size:14px}
+  @media(max-width:720px){nav .links{display:none}}
+  nav .links a{text-decoration:none;color:var(--gray);transition:.15s}
+  nav .links a:hover{color:var(--ink)}
+
+  /* ---------- Hero ---------- */
+  header{padding:78px 0 54px;text-align:center}
+  .pill{
+    display:inline-flex;align-items:center;gap:7px;background:var(--bg3);
+    border-radius:980px;padding:6px 14px;font-size:13px;color:var(--ink2);
+    margin-bottom:22px;
+  }
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);
+    box-shadow:0 0 0 3px rgba(48,163,74,.15)}
+  h1{
+    font-size:52px;line-height:1.06;font-weight:600;letter-spacing:-.024em;
+    margin:0 0 18px;
+  }
+  @media(max-width:640px){h1{font-size:36px}}
+  .lede{font-size:20px;line-height:1.45;color:var(--gray);margin:0 auto 32px;
+    max-width:600px;letter-spacing:.002em}
+
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;text-decoration:none;
+    font-size:16px;padding:13px 26px;border-radius:980px;transition:.18s;
+    border:1px solid transparent;cursor:pointer;font-family:inherit;
+  }
+  .btn.p{background:var(--blue);color:#fff}
+  .btn.p:hover{background:var(--blue-d);transform:translateY(-1px)}
+  .btn.s{background:transparent;color:var(--blue);border-color:var(--line)}
+  .btn.s:hover{background:var(--bg3)}
+
+  /* ---------- 数据条 ---------- */
+  .stats{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--line2);border:1px solid var(--line2);
+    border-radius:16px;overflow:hidden;margin-bottom:70px;
+  }
+  @media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:#fff;padding:24px 20px;text-align:center}
+  .stat .n{font-size:30px;font-weight:600;letter-spacing:-.02em;
+    line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:13px;color:var(--gray)}
+  .stat .n.ok{color:var(--ok)}
+
+  /* ---------- 区块 ---------- */
+  section{padding:0 0 70px}
+  .hd{display:flex;align-items:flex-end;justify-content:space-between;
+    gap:20px;margin-bottom:20px;flex-wrap:wrap}
+  h2{font-size:30px;font-weight:600;letter-spacing:-.018em;margin:0}
+  .hd p{font-size:14px;color:var(--gray);margin:6px 0 0}
+
+  .search{
+    border:1px solid var(--line);border-radius:9px;padding:9px 14px;
+    font-size:14px;font-family:inherit;width:200px;background:#fff;
+    transition:.15s;color:var(--ink);
+  }
+  .search:focus{outline:none;border-color:var(--blue);
+    box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+
+  /* ---------- 平台列表 ---------- */
+  .plist{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .prow{
+    display:flex;align-items:center;gap:14px;padding:15px 18px;
+    border-bottom:1px solid var(--line2);cursor:pointer;
+    transition:.13s;background:#fff;text-align:left;
+    font-family:inherit;width:100%;border-left:0;border-right:0;border-top:0;
+    font-size:15px;color:var(--ink);
+  }
+  .prow:last-child{border-bottom:none}
+  .prow:hover{background:var(--bg2)}
+  .prow.on{background:#f0f7ff;box-shadow:inset 3px 0 0 var(--blue)}
+  .prow .st{width:8px;height:8px;border-radius:50%;flex:none}
+  .st.ok{background:var(--ok)}
+  .st.probe{background:var(--blue)}
+  .st.todo{background:var(--todo)}
+  .st.no{background:var(--gray3)}
+  .prow .nm{font-weight:500;flex:none;min-width:120px;letter-spacing:-.008em}
+  .prow .dm{color:var(--gray3);font-size:13px;flex:1;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* 状态标签：四种状态四种颜色，比一个光秃秃的圆点好认 */
+  .prow .pv{font-size:12px;padding:3px 10px;border-radius:980px;
+    flex:none;white-space:nowrap}
+  .pv.ok{background:#e9f6ec;color:#1d7a3e}
+  .pv.probe{background:#e8f2ff;color:#0a4b8c}
+  .pv.todo{background:#fdf6e3;color:#8a6d1f}
+  .pv.no{background:var(--bg3);color:var(--gray3)}
+
+  /* 图例 —— 没有它，用户看不懂那些彩色圆点是干嘛的 */
+  .legend{display:flex;flex-wrap:wrap;gap:8px 22px;
+    font-size:13px;color:var(--gray);margin:16px 0 14px}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .legend i{width:8px;height:8px;border-radius:50%;flex:none}
+  .legend i.ok{background:var(--ok)}
+  .legend i.probe{background:var(--blue)}
+  .legend i.todo{background:var(--todo)}
+  .legend i.no{background:var(--gray3)}
+  @media(max-width:640px){.legend{flex-direction:column;gap:7px}}
+  .prow .arw{
+    color:var(--gray3);flex:none;font-size:13px;text-decoration:none;
+    padding:5px 10px;border-radius:7px;transition:.13s;
+  }
+  .prow .arw:hover{background:var(--bg3);color:var(--blue)}
+  .prow .arw:active{background:#e4e4e9}
+  @media(max-width:640px){
+    .prow .nm{min-width:auto}
+    .prow .dm{display:none}
+  }
+
+  /* 分组标题 */
+  .grp{
+    padding:11px 18px 8px;font-size:11.5px;font-weight:600;color:var(--gray3);
+    letter-spacing:.06em;background:var(--bg2);
+    border-bottom:1px solid var(--line2);
+  }
+  .empty{padding:24px 18px;color:var(--gray3);font-size:14px;line-height:1.65}
+  .empty b{color:var(--ink2)}
+
+  /* 分类按钮 */
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin:22px 0 12px}
+  .tab{
+    padding:7px 15px;border-radius:980px;font-size:13.5px;
+    border:1px solid var(--line);background:#fff;color:var(--gray);
+    cursor:pointer;transition:.14s;font-family:inherit;
+  }
+  .tab:hover{border-color:var(--gray3);color:var(--ink)}
+  .tab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .tab .n{opacity:.5;margin-left:6px;font-size:12px;font-variant-numeric:tabular-nums}
+  .tab.on .n{opacity:.7}
+  .tabs-hint{font-size:12.5px;color:var(--gray3);margin:0 0 12px}
+
+  /* ---------- 步骤面板 ---------- */
+  .panel{display:none;margin-top:20px;border:1px solid var(--line);
+    border-radius:16px;padding:32px 34px;background:var(--bg2)}
+  @media(max-width:640px){.panel{padding:24px 20px}}
+  .panel.on{display:block;animation:rise .3s cubic-bezier(.4,0,.2,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .ph{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding-bottom:20px;margin-bottom:24px;border-bottom:1px solid var(--line)}
+  .ph h3{font-size:21px;font-weight:600;letter-spacing:-.014em;margin:0}
+  .ph .badge{font-size:12px;padding:3px 10px;border-radius:980px;
+    background:#e9f6ec;color:#1d7a3e;font-weight:500}
+  .ph .badge.probe{background:#e8f2ff;color:#0a4b8c}
+  .ph .badge.todo{background:#fdf6e3;color:#8a6d1f}
+  .ph .badge.no{background:var(--bg3);color:var(--gray)}
+
+  .alt{margin:0;padding-left:20px;font-size:14.5px;color:var(--gray);
+    line-height:1.65}
+  .alt li{margin-bottom:8px}
+  .alt b{color:var(--ink);font-weight:600}
+
+  .btn.go{margin-bottom:26px}
+  .go-hint{font-size:13.5px;color:var(--gray3);margin:-18px 0 26px;line-height:1.5}
+
+  ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+  ol.steps li{counter-increment:s;position:relative;padding:0 0 22px 42px}
+  ol.steps li:last-child{padding-bottom:0}
+  ol.steps li::before{
+    content:counter(s);position:absolute;left:0;top:0;
+    width:25px;height:25px;border-radius:50%;background:#fff;
+    border:1.5px solid var(--line);color:var(--gray);
+    font-size:12.5px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;
+  }
+  ol.steps li:first-child::before{border-color:var(--blue);color:var(--blue)}
+  ol.steps .t{font-size:17px;font-weight:600;letter-spacing:-.01em;
+    margin:0 0 3px;line-height:1.4}
+  ol.steps .d{font-size:14.5px;color:var(--gray);line-height:1.55;margin:0}
+  code{background:var(--bg3);padding:2px 7px;border-radius:5px;
+    font:13.5px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:#b91c1c}
+
+  .note{margin-top:24px;padding:15px 18px;border-radius:11px;font-size:14.5px;
+    line-height:1.55}
+  .note.tip{background:#eef7ff;color:#0a4b8c}
+  .note.ok{background:#effaf1;color:#1d7a3e}
+  .note.warn{background:#fff8ec;color:#8a6d1f}
+  .note b{font-weight:600}
+
+  /* ---------- FAQ ---------- */
+  details{border-bottom:1px solid var(--line)}
+  details:first-of-type{border-top:1px solid var(--line)}
+  summary{
+    padding:20px 4px;cursor:pointer;font-size:17px;font-weight:500;
+    letter-spacing:-.01em;list-style:none;display:flex;
+    justify-content:space-between;align-items:center;gap:16px;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::after{
+    content:'';width:8px;height:8px;flex:none;margin-right:8px;
+    border-right:1.8px solid var(--gray3);border-bottom:1.8px solid var(--gray3);
+    transform:rotate(45deg) translateY(-2px);transition:.25s;
+  }
+  details[open] summary::after{transform:rotate(-135deg) translateY(-4px)}
+  details .bd{padding:0 4px 26px;font-size:14.5px;color:var(--gray);
+    line-height:1.65}
+  details .bd p{margin:0 0 12px}
+  details .bd p:last-child{margin-bottom:0}
+  details .bd ul{margin:0 0 12px;padding-left:20px}
+  details .bd li{margin-bottom:7px}
+  details .bd b{color:var(--ink);font-weight:600}
+  .sub{font-size:14px;font-weight:600;color:var(--ink);margin:20px 0 9px}
+
+  .path{background:var(--ink);color:#f5f5f7;padding:13px 17px;
+    border-radius:10px;font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;
+    margin:10px 0;word-break:break-all}
+
+  footer{border-top:1px solid var(--line);padding:38px 0 60px;
+    font-size:13px;color:var(--gray3);line-height:1.8}
+  footer .in{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="in">
+    <a class="brand" href="#"><span class="dot">订</span>订单导出</a>
+    <div class="links">
+      <a href="#plats">平台支持</a>
+      <a href="#how">使用方法</a>
+      <a href="#faq">常见问题</a>
+    </div>
+  </div>
+</nav>
+
+<header>
+  <div class="wrap">
+    <div class="pill"><span class="dot"></span>装完就在你电脑里跑 · 数据不出本机 · 脚本 v3.9.2</div>
+    <h1>把电商订单<br>变成可用的账本</h1>
+    <p class="lede">
+      装一个浏览器扩展，打开订单页点一下，<br>
+      自动整理成带分类、备注和汇总的表格。不需要其他任何东西。
+    </p>
+    <div class="cta">
+      <a class="btn p" href="#how">开始使用</a>
+      <a class="btn s" href="#plats">看支持哪些平台</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ---------- 数据条 ---------- -->
+  <div class="stats">
+    <div class="stat"><div class="n" id="s-total">—</div><div class="l">覆盖平台</div></div>
+    <div class="stat"><div class="n ok" id="s-ok">2</div><div class="l">已验证可用</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">需要安装的程序</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">网络请求</div></div>
+  </div>
+
+  <!-- ---------- 平台支持 ---------- -->
+  <section id="plats">
+    <div class="hd">
+      <div>
+        <h2>平台支持</h2>
+        <p>不挑平台 —— 打开订单页它自己就认出来了，不是订单页则安安静静不打扰。</p>
+      </div>
+      <input class="search" id="q" type="search" placeholder="搜索平台…">
+    </div>
+    <div class="legend">
+      <span><i class="ok"></i>已验证可用 —— 数据逐行核对过</span>
+      <span><i class="probe"></i>链接已确认 —— 能打开，数据未核对</span>
+      <span><i class="todo"></i>待验证 —— 还没试过</span>
+      <span><i class="no"></i>暂不支持 —— 平台没有网页版订单</span>
+    </div>
+    <div class="plist" id="hotlist"></div>
+    <div class="tabs" id="tabs"></div>
+    <p class="tabs-hint" id="tabs-hint"></p>
+    <div class="plist" id="plist"></div>
+  </section>
+
+  <!-- ---------- 使用方法 ---------- -->
+  <section id="how">
+    <div class="hd">
+      <div>
+        <h2>使用方法</h2>
+        <p id="how-sub">在上方选一个平台，这里会显示对应步骤。</p>
+      </div>
+    </div>
+    <div class="panel on" id="panel">
+      <div class="ph">
+        <h3 id="ph-name">选择一个平台</h3>
+        <span class="badge" id="ph-badge"></span>
+      </div>
+      <div id="ph-body"></div>
+    </div>
+  </section>
+
+  <!-- ---------- FAQ ---------- -->
+  <section id="faq">
+    <div class="hd"><div><h2>常见问题</h2></div></div>
+
+    <details open>
+      <summary>首次使用？先装这两样</summary>
+      <div class="bd">
+        <p>一次性设置，做完以后就再也不用管。</p>
+
+        <p class="sub">① 装篡改猴</p>
+        <p>Edge 扩展商店搜 <b>Tampermonkey</b>，认准作者 <b>Jan Biniok</b>、橙色猴子图标。已装过就跳过。</p>
+
+        <p class="sub">② 打开「允许用户脚本」开关</p>
+        <p>地址栏输入 <code>edge://extensions</code> → 找到篡改猴 → 点「<b>详细信息</b>」→ 里面有「<b>允许用户脚本</b>」开关 → 打开。</p>
+        <p><b>这一步最容易漏，漏了整个工具都不工作，而且没有任何报错。</b>
+          「开发者模式」和「允许用户脚本」是<b>两个不同的开关</b>，只开前者没用。</p>
+
+        <p class="sub">③ 装抓取脚本</p>
+        <p style="margin:14px 0 12px">
+          <a class="btn p" style="padding:10px 26px;font-size:15px" href="order-export.user.js">点这里安装脚本</a>
+        </p>
+        <p>篡改猴会弹出安装页 → 点「安装」→ 若再弹询问框，点「允许」。</p>
+        <p id="inst-warn" style="display:none;font-size:13px;line-height:1.7;background:#fff8ec;color:#8a6d1f;padding:11px 14px;border-radius:9px"></p>
+
+        <p class="sub">按钮点了没反应？走篡改猴自己的入口（一定能成）</p>
+        <ol style="padding-left:20px;margin:0 0 6px">
+          <li>点浏览器右上角<b>篡改猴图标</b> → 「管理面板」</li>
+          <li>左侧选<b>「实用工具」</b>，找到 <b>Install from URL</b>（从网址安装）</li>
+          <li>把这段粘进去：<code id="inst-url">…</code></li>
+          <li>点「安装」</li>
+        </ol>
+      </div>
+    </details>
+
+    <details>
+      <summary>面板没出现怎么办</summary>
+      <div class="bd">
+        <ul>
+          <li><b>你在订单页吗？</b>面板只在订单列表页出现，首页和商品页不会冒出来。</li>
+          <li><b>开了「允许用户脚本」吗？</b>九成是这个。开完要刷新页面。</li>
+          <li><b>刚装完脚本？</b>按 <code>F5</code> 刷新。</li>
+          <li><b>都没有？</b>按 <code>Ctrl+Shift+E</code> 强制叫出面板试试。</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>面板出来了，但显示「没找到订单卡片」</summary>
+      <div class="bd">
+        <ul>
+          <li><b>登录了吗？</b>没登录会跳去二维码登录页，上面没订单可抓。</li>
+          <li><b>页面加载完了吗？</b>等两秒再点。</li>
+          <li><b>是订单列表页吗？</b>商品详情页上没有订单卡片。</li>
+        </ul>
+        <p>都不行就发一份诊断信息给我们 —— 多半是这个平台的页面结构还没适配，我们会按它调。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>点了「加载更多」，滚到底就不动了（京东这类）</summary>
+      <div class="bd">
+        <p>先说结论：<b>现在它会自己接着翻页，不用你动手了。</b></p>
+        <p>原因在于订单页有两种：<b>拼多多、淘宝是无限滚动</b> —— 滚到底页面自己会接着加载；
+          <b>京东、当当是分页</b> —— 滚到底什么都不会发生，必须点「下一页」。
+          滚动触发不了翻页，这是两套机制，所以老版本到这儿就卡住了。</p>
+        <p>现在脚本滚不动的时候，会去页面上找「下一页」，找到就替你点，点完接着抓下一批，
+          一直翻到没有下一页为止。翻的过程中按钮会变成「<b>⏹ 停止翻页</b>」，随时能停。</p>
+        <p class="sub">两种收尾提示</p>
+        <ul>
+          <li><b>「页面上的『下一页』没了」</b> —— 正常，说明已经翻到最后一页了。</li>
+          <li><b>没找到「下一页」</b> —— 这个平台的分页器长得太特别，脚本没认出来。
+            点面板里的「抓不到？导出诊断信息」，那份诊断里专门有一行<b>「分页器」</b>，发给我们就能补上。</li>
+        </ul>
+        <p>另外「加载更多」对分页平台是<b>先滚后翻</b>：先滚一遍确认这页订单都出来了，再开始翻页。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>哪些行需要我核对</summary>
+      <div class="bd">
+        <p><b>看表格里的「备注」列。</b>有字就说明这行可能不准，原因直接写在里面：</p>
+        <ul>
+          <li><b>没认出金额，必须人工补</b> —— 不补的话合计算少</li>
+          <li><b>没找到「实付」，用的是标价</b> —— 常见于「先用后付」单，这钱可能还没付</li>
+          <li><b>页面有多个价格且没标「实付」</b> —— 取了最小的那个（实付一般 ≤ 标价），建议核对</li>
+          <li><b>已退款，不计入实际支出</b></li>
+        </ul>
+        <p>备注是空的那行就是完全可信的，不用管。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>要装别的软件吗</summary>
+      <div class="bd">
+        <p><b>不用，一个都不用装。</b>分类、备注、汇总全部在浏览器里算好了，导出的表格双击就能用 Excel / WPS 打开。</p>
+        <p>整个过程只有两样东西：<b>浏览器</b> + <b>篡改猴扩展</b>。不用装客户端、不用注册账号、不用付费。</p>
+        <p class="sub">会动我电脑上的东西吗</p>
+        <p>不会。脚本只读你已经打开的订单页，在你浏览器里生成表格文件，不碰系统、不占后台。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>为什么有些平台显示「暂不支持」</summary>
+      <div class="bd">
+        <p>因为它们<b>网页版压根没有订单列表页</b> —— 订单只存在手机 App 里，浏览器里根本看不到，
+          脚本自然也没东西可读（它只读屏幕上已经显示出来的内容）。</p>
+        <p>目前确认做不了的是这几个：<b>抖音商城、快手小店、得物、nice</b>，另外 <b>亚马逊中国</b>
+          已经退出中国市场，网站不再提供订单查询。</p>
+        <p>这类平台只能用 App 内截图，或者手动记账。</p>
+        <p class="sub">「待验证」和「暂不支持」不一样</p>
+        <p><b>待验证</b> = 有网页版订单页、值得一试，只是还没人试过。
+          <b>暂不支持</b> = 已经确认试不了，不用白费劲。</p>
+        <p class="sub">「链接已确认」是什么意思</p>
+        <p>意思是这个平台的订单页<b>地址核对过、能打开</b>，但导出数据的准确性<b>还没人工逐行核对</b>。
+          第一次用先看两行金额对不对就行。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>页面上明明有订单，脚本却说没找到</summary>
+      <div class="bd">
+        <p>先按顺序排除三件事：<b>登录了吗</b>、<b>页面加载完了吗</b>（等两秒）、<b>确实是订单列表页吗</b>。</p>
+        <p>都不是的话，多半是这个平台的订单页结构比较特别（有些平台的订单页内容藏得比较深，脚本一时读不到）。
+          这类平台我们会在上方的平台列表里标成「<b>待验证</b>」。</p>
+        <p class="sub">两条路</p>
+        <ul>
+          <li>先看这个平台有没有<b>自带的导出按钮</b> —— 淘宝、1688 这类都有，直接用它更省事。</li>
+          <li>点面板里的「<b>抓不到？导出诊断信息</b>」，把导出的那个 txt 发给我们，就能针对它适配。</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>有新版本了，怎么更新</summary>
+      <div class="bd">
+        <p><b>回到本页最上面「首次使用」那一节，再点一次安装按钮就行 —— 不用先卸载。</b>
+          篡改猴会用新版覆盖旧版，你的历史数据不受影响。</p>
+
+        <p class="sub">怎么确认装上了</p>
+        <p>点篡改猴图标 → 管理面板，列表里能看到脚本的版本号（当前是 <b>3.9.2</b>）。对不上就是没覆盖成功。</p>
+
+        <p class="sub">点了没反应，或者反而开始下载文件？</p>
+        <p>篡改猴只在<b>你点网页里的链接</b>时才接管安装。把 <code>.user.js</code> 的地址直接丢进浏览器，
+          浏览器会把它当普通文件下载，弹「保留 / 放弃」—— 装不上。</p>
+        <p>所以请从<b>本页</b>点按钮；还不行就走「首次使用」里第 ③ 步的第二条路（篡改猴的从网址安装）。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>用这个会不会被封号</summary>
+      <div class="bd">
+        <p><b>不会。</b>这套工具<b>一个网络请求都不发</b> —— 你在正常翻自己的订单页，脚本只读你已经看到的屏幕。
+          平台风控能看到的只有请求，而请求数是 0。</p>
+        <p><b>想自证</b>：关掉 WiFi 再跑一遍，照样能抓能导 —— 因为它压根上不了网。</p>
+        <p class="sub">唯一的例外</p>
+        <p class="sub">会替你操作页面的只有「加载更多」</p>
+        <p>它做两件事，都是你自己本来就要做的动作：</p>
+        <ul>
+          <li><b>往下滚</b>（拼多多、淘宝这种无限滚动的）—— 跟你手动滚一样，间隔 1.4 秒。</li>
+          <li><b>点「下一页」</b>（京东、当当这种分页的）—— 间隔 2.6 秒，像人在翻。</li>
+        </ul>
+        <p><b>请求都是页面自己发的，跟你手动操作一模一样</b>，只是不用你点。
+          脚本自己一个请求都不发。</p>
+        <p>不过它确实比你手动快，所以做了四道刹车：<b>随时可点停</b>、
+          <b>连续 3 页抓不到新订单自动停</b>、<b>最多 20 页自动停</b>、
+          <b>点完「下一页」页面没变化就立刻停手</b>（防止点错东西）。</p>
+        <p class="sub">红线</p>
+        <ul>
+          <li>弹验证码、要求重新登录、页面明显变慢 → <b>立刻停</b>，别重试。</li>
+          <li>只从 Edge 官方扩展商店装扩展，别碰下载站的 <code>.crx</code> 文件。</li>
+          <li><b>永远不要粘贴网上或别人发你的控制台代码</b>。</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap in">
+    <span>订单导出 · 全部在你的电脑里运行，数据不出本机</span>
+    <span>脚本 v3.9.2 · 2026-09-26</span>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   平台清单 —— 加平台只改这里，页面和文案自动跟着变
+   status: ok=已验证 / todo=待验证 / no=不适用
+   method: script=用脚本 / official=平台自带功能
+   ============================================================ */
+/* 详细步骤只给已验证的平台写；其他的用通用步骤（defaultSteps） */
+
+var _pddSteps = [
+  ['扫码登录','用手机拼多多扫二维码（账号密码或短信验证码也可以）。'],
+  ['点「加载更多」，再拖滑动条选条数',
+   '右下角面板里操作。滚动中按钮会变成「⏹ 停止滚动」，随时能停。滑动条是对已加载的订单做截取，所以想导 37 条就能精确到 37 条。'],
+  ['点「导出表格」—— 完事',
+   '下载一个 CSV，双击就能用 Excel 打开。里面已经算好了分类、备注和汇总。']
+];
+
+var PLATFORMS = [
+  /* ---------- 综合电商 ---------- */
+  { cat:'综合电商', name:'拼多多', domain:'mobile.yangkeduo.com', status:'ok', method:'script',
+    url:'https://mobile.yangkeduo.com/orders.html', note:'需扫码登录', steps:_pddSteps,
+    notes:[['tip','加载多少 ≠ 导出多少。先用「加载更多」把订单刷出来，再用滑动条决定导多少条。'],
+           ['ok','表格底部自动算好 订单总额 / 已退款 / 实际支出。「备注」列会写明哪些行需要核对。']] },
+  { cat:'综合电商', name:'淘宝 / 天猫', domain:'trade.taobao.com', status:'ok', method:'script',
+    url:'https://trade.taobao.com/trade/itemlist/list_bought_items.htm',
+    steps:[
+      ['登录','进入「已买到的宝贝」。'],
+      ['方式一 · 用脚本抓（推荐）',
+       '右下角小圆钮 → 面板 →「加载更多」→ 拖滑动条选条数 →「导出表格」。分类、备注、汇总都算好。'],
+      ['方式二 · 用淘宝自带的导出',
+       '订单列表<b>上方</b>点「导出订单」→ 选时间范围 → 选 Excel 格式 → 确认。一次能导 <b>10 页</b>，订单多就跳到第 11 页再导一次。']
+    ],
+    notes:[['ok','两种随便挑：<b>脚本</b>会连分类和汇总一起算好；<b>官方导出</b>一次 10 页更省事，但格式是淘宝自己的，暂时不会并进脚本的总表。']] },
+  { cat:'综合电商', name:'京东', domain:'order.jd.com', status:'ok', method:'script', url:'https://order.jd.com/center/list.action',
+    notes:[['tip','京东的订单状态叫法和别家不同（「等待收货」「已完成」这类）。脚本已专门收录，导出后随手核对一两行金额更稳。']] },
+  { cat:'综合电商', name:'1688', domain:'trade.1688.com', status:'todo', method:'script', url:'https://trade.1688.com/order/buyer_order_list.htm',
+    notes:[
+      ['tip','1688 一单里会同时出现「单价 / 总金额 / 实付」三个数，脚本取最小的那个（实付通常最小）。备注列若写「取了最小值」，核对一下就行。'],
+      ['warn','1688 的订单页结构比较特殊，脚本还在适配中。着急用的话，1688 页面自带导出按钮，可以直接用它导出。']
+    ] },
+  { cat:'综合电商', name:'天猫超市', domain:'chaoshi.tmall.com', status:'todo', method:'script', url:'https://chaoshi.tmall.com/', note:'进去后找「我的订单」' },
+  { cat:'综合电商', name:'苏宁易购', domain:'suning.com', status:'probe', method:'script', url:'https://my.suning.com/', note:'进去后找「我的订单」' },
+  { cat:'综合电商', name:'国美', domain:'gome.com.cn', status:'todo', method:'script', url:'https://www.gome.com.cn/', note:'进去后找「我的订单」' },
+  { cat:'综合电商', name:'当当', domain:'dangdang.com', status:'todo', method:'script', url:'https://my.dangdang.com/order/' },
+  { cat:'综合电商', name:'1号店', domain:'yhd.com', status:'todo', method:'script', url:'https://www.yhd.com/', note:'进去后找「我的订单」' },
+  { cat:'综合电商', name:'亚马逊中国', domain:'amazon.cn', status:'no', method:'script',
+    why:'亚马逊中国已退出中国市场，网站不再提供订单查询。历史订单只能在邮箱里搜订单确认邮件。' },
+  { cat:'综合电商', name:'唯品会', domain:'vip.com', status:'ok', method:'script', url:'https://order.vip.com/',
+    notes:[['ok','实测可以正常导出。']] },
+  { cat:'综合电商', name:'聚美优品', domain:'jumei.com', status:'todo', method:'script', url:'https://www.jumei.com/', note:'进去后找「我的订单」' },
+  { cat:'综合电商', name:'蘑菇街', domain:'mogujie.com', status:'todo', method:'script', url:'https://www.mogujie.com/', note:'进去后找「我的订单」' },
+
+  /* ---------- 品牌商城 ---------- */
+  { cat:'品牌商城', name:'小米商城', domain:'mi.com', status:'probe', method:'script', url:'https://order.mi.com/order' },
+  { cat:'品牌商城', name:'小米有品', domain:'youpin.mi.com', status:'todo', method:'script', url:'https://youpin.mi.com/', note:'进去后找「我的订单」' },
+  { cat:'品牌商城', name:'华为商城', domain:'vmall.com', status:'todo', method:'script', url:'https://www.vmall.com/', note:'进去后找「我的订单」' },
+  { cat:'品牌商城', name:'荣耀商城', domain:'honor.com', status:'todo', method:'script', url:'https://www.honor.com/cn/' },
+  { cat:'品牌商城', name:'OPPO 商城', domain:'opposhop.cn', status:'todo', method:'script', url:'https://www.opposhop.cn/', note:'进去后找「我的订单」' },
+  { cat:'品牌商城', name:'vivo 商城', domain:'vivo.com.cn', status:'todo', method:'script', url:'https://shop.vivo.com.cn/', note:'进去后找「我的订单」' },
+  { cat:'品牌商城', name:'联想商城', domain:'lenovo.com.cn', status:'todo', method:'script', url:'https://www.lenovo.com.cn/', note:'进去后找「我的订单」' },
+  { cat:'品牌商城', name:'Apple 中国', domain:'apple.com.cn', status:'todo', method:'script', url:'https://www.apple.com.cn/shop/order/list' },
+  { cat:'品牌商城', name:'网易严选', domain:'you.163.com', status:'todo', method:'script', url:'https://you.163.com/', note:'进去后找「我的订单」' },
+  { cat:'品牌商城', name:'宜家中国', domain:'ikea.cn', status:'todo', method:'script', url:'https://www.ikea.cn/', note:'进去后找「我的订单」' },
+  { cat:'品牌商城', name:'名创优品', domain:'miniso.com', status:'todo', method:'script', url:'https://www.miniso.com/', note:'进去后找「我的订单」' },
+
+  /* ---------- 内容 / 社交电商 ---------- */
+  { cat:'内容电商', name:'小红书', domain:'xiaohongshu.com', status:'todo', method:'script', url:'https://www.xiaohongshu.com/', note:'进去后找「我的订单」' },
+  { cat:'内容电商', name:'抖音商城', domain:'douyin.com', status:'no', method:'script',
+    why:'订单只存在抖音 App 里，网页版没有订单列表页，抓不到。' },
+  { cat:'内容电商', name:'快手小店', domain:'kuaishou.com', status:'no', method:'script',
+    why:'订单只存在快手 App 里，网页版没有订单列表页，抓不到。' },
+  { cat:'内容电商', name:'哔哩哔哩会员购', domain:'bilibili.com', status:'todo', method:'script', url:'https://show.bilibili.com/', note:'进去后找「我的订单」' },
+  { cat:'内容电商', name:'什么值得买', domain:'smzdm.com', status:'todo', method:'script', url:'https://www.smzdm.com/', note:'进去后找「我的订单」' },
+  { cat:'内容电商', name:'微博商城', domain:'weibo.com', status:'todo', method:'script', url:'https://weibo.com/', note:'进去后找「我的订单」' },
+
+  /* ---------- 跨境海淘 ---------- */
+  { cat:'跨境海淘', name:'天猫国际', domain:'tmall.hk', status:'todo', method:'script', url:'https://www.tmall.hk/', note:'进去后找「我的订单」' },
+  { cat:'跨境海淘', name:'京东国际', domain:'jd.hk', status:'todo', method:'script', url:'https://www.jd.hk/', note:'进去后找「我的订单」' },
+  { cat:'跨境海淘', name:'考拉海购', domain:'kaola.com', status:'todo', method:'script', url:'https://www.kaola.com/', note:'进去后找「我的订单」' },
+  { cat:'跨境海淘', name:'AliExpress 速卖通', domain:'aliexpress.com', status:'todo', method:'script', url:'https://www.aliexpress.com/', note:'进去后找「我的订单」' },
+  { cat:'跨境海淘', name:'Temu', domain:'temu.com', status:'todo', method:'script', url:'https://www.temu.com/', note:'进去后找「我的订单」' },
+  { cat:'跨境海淘', name:'SHEIN', domain:'shein.com', status:'todo', method:'script', url:'https://www.shein.com/', note:'进去后找「我的订单」' },
+  { cat:'跨境海淘', name:'Amazon', domain:'amazon.com', status:'todo', method:'script', url:'https://www.amazon.com/gp/css/order-history' },
+  { cat:'跨境海淘', name:'eBay', domain:'ebay.com', status:'todo', method:'script', url:'https://www.ebay.com/mye/myebay/purchase' },
+  { cat:'跨境海淘', name:'Shopee', domain:'shopee.cn', status:'todo', method:'script', url:'https://shopee.cn/', note:'进去后找「我的订单」' },
+  { cat:'跨境海淘', name:'iHerb', domain:'iherb.com', status:'todo', method:'script', url:'https://www.iherb.com/', note:'进去后找「我的订单」' },
+
+  /* ---------- 二手 / 回收 ---------- */
+  { cat:'二手回收', name:'闲鱼', domain:'goofish.com', status:'ok', method:'script', url:'https://www.goofish.com/', note:'进去后点右上角头像 →「我的订单」' },
+  { cat:'二手回收', name:'转转', domain:'zhuanzhuan.com', status:'todo', method:'script', url:'https://www.zhuanzhuan.com/', note:'进去后找「我的订单」' },
+  { cat:'二手回收', name:'爱回收', domain:'aihuishou.com', status:'todo', method:'script', url:'https://www.aihuishou.com/', note:'进去后找「我的订单」' },
+  { cat:'二手回收', name:'孔夫子旧书网', domain:'kongfz.com', status:'todo', method:'script', url:'https://www.kongfz.com/', note:'进去后找「我的订单」' },
+  { cat:'二手回收', name:'多抓鱼', domain:'duozhuayu.com', status:'todo', method:'script', url:'https://www.duozhuayu.com/', note:'进去后找「我的订单」' },
+
+  /* ---------- 潮流 / 垂直 ---------- */
+  { cat:'潮流垂直', name:'得物', domain:'dewu.com', status:'no', method:'script',
+    why:'订单只存在得物 App 里，网页版没有订单列表页，抓不到。' },
+  { cat:'潮流垂直', name:'nice', domain:'nice.com', status:'no', method:'script',
+    why:'订单只存在 nice App 里，网页版没有订单列表页，抓不到。' },
+  { cat:'潮流垂直', name:'识货', domain:'shihuo.cn', status:'todo', method:'script', url:'https://www.shihuo.cn/', note:'进去后找「我的订单」' },
+  { cat:'潮流垂直', name:'寺库', domain:'secoo.com', status:'todo', method:'script', url:'https://www.secoo.com/', note:'进去后找「我的订单」' },
+  { cat:'潮流垂直', name:'丝芙兰', domain:'sephora.cn', status:'todo', method:'script', url:'https://www.sephora.cn/', note:'进去后找「我的订单」' },
+  { cat:'潮流垂直', name:'屈臣氏', domain:'watsons.com.cn', status:'todo', method:'script', url:'https://www.watsons.com.cn/', note:'进去后找「我的订单」' },
+
+  /* ---------- 生鲜 / 本地生活 ---------- */
+  { cat:'生鲜本地', name:'盒马', domain:'freshhema.com', status:'todo', method:'script', url:'https://www.freshhema.com/', note:'进去后找「我的订单」' },
+  { cat:'生鲜本地', name:'叮咚买菜', domain:'ddmc.com', status:'todo', method:'script', url:'https://www.100.me/', note:'进去后找「我的订单」' },
+  { cat:'生鲜本地', name:'朴朴超市', domain:'pupuapi.com', status:'todo', method:'script', url:'https://www.pupuapi.com/', note:'进去后找「我的订单」' },
+  { cat:'生鲜本地', name:'美团', domain:'meituan.com', status:'todo', method:'script', url:'https://www.meituan.com/', note:'进去后找「我的订单」' },
+  { cat:'生鲜本地', name:'饿了么', domain:'ele.me', status:'todo', method:'script', url:'https://www.ele.me/', note:'进去后找「我的订单」' },
+  { cat:'生鲜本地', name:'多点', domain:'dmall.com', status:'todo', method:'script', url:'https://www.dmall.com/', note:'进去后找「我的订单」' },
+
+  /* ---------- 旅行 ---------- */
+  { cat:'旅行出行', name:'携程', domain:'ctrip.com', status:'todo', method:'script', url:'https://www.ctrip.com/', note:'进去后找「我的订单」' },
+  { cat:'旅行出行', name:'飞猪', domain:'fliggy.com', status:'todo', method:'script', url:'https://www.fliggy.com/', note:'进去后找「我的订单」' },
+  { cat:'旅行出行', name:'去哪儿', domain:'qunar.com', status:'todo', method:'script', url:'https://www.qunar.com/', note:'进去后找「我的订单」' },
+  { cat:'旅行出行', name:'同程旅行', domain:'ly.com', status:'todo', method:'script', url:'https://www.ly.com/', note:'进去后找「我的订单」' },
+  { cat:'旅行出行', name:'马蜂窝', domain:'mafengwo.cn', status:'todo', method:'script', url:'https://www.mafengwo.cn/', note:'进去后找「我的订单」' },
+  { cat:'旅行出行', name:'12306', domain:'12306.cn', status:'todo', method:'script', url:'https://www.12306.cn/', note:'进去后找「我的订单」' }
+];
+
+/* 常用平台 —— 置顶显示，省掉 90% 的翻找。改这里就行 */
+var HOT = ['拼多多', '淘宝 / 天猫', '京东', '1688', '闲鱼',
+           '唯品会', '小米商城', '抖音商城'];
+PLATFORMS.forEach(function (p) { if (HOT.indexOf(p.name) >= 0) p.hot = 1; });
+
+/* 状态文案 —— 一处定义，列表、面板、图例共用 */
+var STATUS_TXT = {
+  ok:    '已验证可用',
+  probe: '链接已确认',
+  todo:  '待验证',
+  no:    '暂不支持'
+};
+
+var CATS = [];
+PLATFORMS.forEach(function (p) { if (CATS.indexOf(p.cat) < 0) CATS.push(p.cat); });
+
+/* ---------- 渲染 ---------- */
+var hotEl = document.getElementById('hotlist');
+var listEl = document.getElementById('plist');
+var tabsEl = document.getElementById('tabs');
+var hintEl = document.getElementById('tabs-hint');
+var current = null;
+var curCat = CATS[0];
+
+// 造一行
+function makeRow(p) {
+  var row = document.createElement('div');
+  row.className = 'prow' + (current === p ? ' on' : '');
+  row.setAttribute('role', 'button');
+  row.tabIndex = 0;
+
+  row.innerHTML =
+    '<span class="st ' + p.status + '"></span>' +
+    '<span class="nm">' + p.name + '</span>' +
+    '<span class="dm">' + p.domain + '</span>' +
+    '<span class="pv ' + p.status + '">' + STATUS_TXT[p.status] + '</span>';
+
+  // 「打开 →」是真链接：点了直接开新标签页，不会只是选中
+  if (p.url) {
+    var a = document.createElement('a');
+    a.className = 'arw';
+    a.href = p.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = '打开 →';
+    a.onclick = function (e) { e.stopPropagation(); };
+    row.appendChild(a);
+  }
+
+  row.onclick = function () {
+    current = p;
+    renderAll(document.getElementById('q').value);
+    showPanel(p);
+  };
+  return row;
+}
+
+function groupHeader(text) {
+  var d = document.createElement('div');
+  d.className = 'grp';
+  d.textContent = text;
+  return d;
+}
+
+function renderAll(filter) {
+  var f = (filter || '').trim().toLowerCase();
+  hotEl.innerHTML = ''; listEl.innerHTML = ''; tabsEl.innerHTML = '';
+
+  // ---- 搜索：不分常用/分类，直接出结果 ----
+  if (f) {
+    var hits = PLATFORMS.filter(function (p) {
+      return (p.name + ' ' + p.domain + ' ' + p.cat).toLowerCase().indexOf(f) >= 0;
+    });
+    hotEl.style.display = 'none';
+    tabsEl.style.display = 'none';
+    hintEl.style.display = 'none';
+
+    if (!hits.length) {
+      listEl.innerHTML = '<div class="empty">' +
+        '<b>没找到匹配的平台。</b><br>' +
+        '但这不代表不支持 —— 脚本是平台无关的，它不认识具体平台，只在页面上找订单卡片。<br>' +
+        '直接打开那个网站的订单页试试，多半能用。' +
+        '</div>';
+      return;
+    }
+    listEl.appendChild(groupHeader('搜索结果 ' + hits.length + ' 个'));
+    hits.forEach(function (p) { listEl.appendChild(makeRow(p)); });
+    return;
+  }
+
+  // ---- 常用 ----
+  hotEl.style.display = '';
+  tabsEl.style.display = '';
+  hintEl.style.display = '';
+
+  hotEl.appendChild(groupHeader('常用'));
+  PLATFORMS.filter(function (p) { return p.hot; })
+           .forEach(function (p) { hotEl.appendChild(makeRow(p)); });
+
+  // ---- 分类按钮 ----
+  var tabs = CATS.concat(['全部']);
+  tabs.forEach(function (c) {
+    var b = document.createElement('button');
+    b.className = 'tab' + (curCat === c ? ' on' : '');
+    b.type = 'button';
+    var n = (c === '全部') ? PLATFORMS.length
+                           : PLATFORMS.filter(function (p) { return p.cat === c; }).length;
+    b.innerHTML = c + '<span class="n">' + n + '</span>';
+    b.onclick = function () {
+      curCat = c;
+      renderAll(document.getElementById('q').value);
+    };
+    tabsEl.appendChild(b);
+  });
+
+  // ---- 该分类的列表 ----
+  var items = (curCat === '全部') ? PLATFORMS
+            : PLATFORMS.filter(function (p) { return p.cat === curCat; });
+  listEl.appendChild(groupHeader(curCat === '全部' ? '全部平台' : curCat));
+  items.forEach(function (p) { listEl.appendChild(makeRow(p)); });
+
+  hintEl.textContent = '列表里没有你用的平台也不代表不支持 —— 脚本是平台无关的，直接打开那个网站的订单页试试。';
+}
+
+/* ---------- 渲染步骤面板 ---------- */
+function showPanel(p) {
+  var panel = document.getElementById('panel');
+  panel.classList.add('on');
+
+  document.getElementById('ph-name').textContent = p.name;
+
+  var badge = document.getElementById('ph-badge');
+  badge.textContent = STATUS_TXT[p.status];
+  badge.className = 'badge ' + p.status;
+
+  var body = document.getElementById('ph-body');
+  body.innerHTML = '';
+
+  /* ---- 明确做不了的：先说清楚 + 给替代办法，不给通用步骤，免得白折腾 ---- */
+  if (p.status === 'no') {
+    var w = document.createElement('div');
+    w.className = 'note warn';
+    w.innerHTML = '<b>这个平台用不了。</b>' + (p.why || '');
+    body.appendChild(w);
+
+    var t = document.createElement('p');
+    t.className = 'sub';
+    t.textContent = '那怎么办';
+    body.appendChild(t);
+
+    var ul = document.createElement('ul');
+    ul.className = 'alt';
+    ul.innerHTML =
+      '<li><b>方法一</b>：在手机 App 的「我的订单」里逐单截图，攒成一批后用表格软件录入（我们也可以帮你整理成和脚本导出一样的表）。</li>' +
+      '<li><b>方法二</b>：手动记。只记日期、金额、买了什么，一个月也就几十行。</li>' +
+      '<li><b>方法三</b>：如果这个平台也有网页版商城（比如抖音有「抖音商城」网页），订单在网页上能看到的，脚本就有机会抓到 —— 打开订单页按 <code>Ctrl+Shift+E</code> 试试。</li>';
+    body.appendChild(ul);
+
+    document.getElementById('how-sub').textContent = '当前平台：' + p.name + '（暂不支持）';
+    return;
+  }
+
+  if (p.url) {
+    // 链接只填到首页的，别说「打开订单页」—— 那是骗人
+    var isHome = !!p.note || /^https?:\/\/[^/]+\/?$/.test(p.url);
+    var a = document.createElement('a');
+    a.className = 'btn p go';
+    a.href = p.url; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = isHome ? '打开网站 →' : '打开订单页 →';
+    body.appendChild(a);
+  }
+
+  // 链接只到首页的，明确告诉你进去后点哪 —— 免得点进去发现不是订单页
+  if (p.note) {
+    var hint = document.createElement('p');
+    hint.className = 'go-hint';
+    hint.textContent = '↑ ' + p.note;
+    body.appendChild(hint);
+  }
+
+  var steps = p.steps || defaultSteps(p);
+  var ol = document.createElement('ol');
+  ol.className = 'steps';
+  steps.forEach(function (s) {
+    var li = document.createElement('li');
+    li.innerHTML = '<p class="t">' + s[0] + '</p><p class="d">' + s[1] + '</p>';
+    ol.appendChild(li);
+  });
+  body.appendChild(ol);
+
+  // 「链接已确认」= 地址核对过，但数据没人工核对过 —— 说清楚，别让人以为跟已验证一个水平
+  if (p.status === 'probe') {
+    var pr = document.createElement('div');
+    pr.className = 'note tip';
+    pr.innerHTML = '<b>链接已确认真实。</b>这个平台的订单页地址核对过、能打开，' +
+      '但导出的数据还没人工逐行核对 —— 第一次用建议先看两行金额对不对。' +
+      '发现对不上可以在面板里点「抓不到？导出诊断信息」，把文件发给我们。';
+    body.appendChild(pr);
+  }
+
+  (p.notes || []).forEach(function (n) {
+    var d = document.createElement('div');
+    d.className = 'note ' + n[0];
+    d.innerHTML = n[1];
+    body.appendChild(d);
+  });
+
+  document.getElementById('how-sub').textContent = '当前平台：' + p.name;
+}
+
+/* 未验证平台用这套通用步骤 */
+function defaultSteps(p) {
+  return [
+    ['打开订单页并登录','从上面的「打开订单页」进去，登录你的账号。'],
+    ['看右下角有没有出现面板',
+     '出现了说明识别成功，直接进入下一步。没出现就按 <code>Ctrl+Shift+E</code> 强制叫出面板试试。'],
+    ['点「导出表格」','如果面板里显示「没找到订单卡片」，说明这个平台的页面结构还没适配 —— 把诊断信息发给我们，就能针对它适配。']
+  ];
+}
+
+/* ---------- 搜索 ---------- */
+document.getElementById('q').oninput = function () {
+  renderAll(this.value);
+};
+
+/* ---------- 数据条 ---------- */
+document.getElementById('s-total').textContent = PLATFORMS.length;
+document.getElementById('s-ok').textContent =
+  PLATFORMS.filter(function (p) { return p.status === 'ok'; }).length;
+
+/* ---------- 初始：默认选中第一个 ---------- */
+current = PLATFORMS[0];
+renderAll('');
+showPanel(PLATFORMS[0]);
+
+/* ---------- 安装地址 ----------
+   用「本页网址 + /order-export.user.js」现算，不写死 ——
+   这样本页无论挂在本地小服务还是公网上，安装地址都跟着变，不用改代码。
+
+   直接双击文件打开时（地址栏是 file://）拼出来是 null，安装按钮点了只会变成下载，
+   所以那种情况下给一条明确的提示，免得用户以为工具坏了。 */
+(function () {
+  var code = document.getElementById('inst-url');
+  var warn = document.getElementById('inst-warn');
+  if (!code) return;
+
+  if (/^https?:$/.test(location.protocol)) {
+    // ⚠ 必须用「相对于本页地址」解析，不能用 location.origin 拼字符串。
+    //   origin 只有「协议+域名」，不带目录：
+    //   页面挂在 /order-export/ 这种子目录下时（GitHub Pages 项目站就是这样），
+    //   origin 拼出来会漏掉 /order-export/ → 404。
+    //   new URL(相对路径, location.href) 会自动带上当前目录，根目录和子目录都对。
+    code.textContent = new URL('order-export.user.js', location.href).href;
+  } else {
+    code.textContent = '（本页需要以网址方式打开才拼得出来）';
+    if (warn) {
+      warn.style.display = 'block';
+      warn.innerHTML = '<b>提示：你正在直接打开文件</b>（地址栏以 <code>file://</code> 开头），'
+        + '所以上面那个安装按钮点了会变成「下载文件」、装不上。'
+        + '请用<b>本页的网址</b>打开（作者给你的链接，或本地小服务开的页面）。';
+    }
+  }
+})();
+</script>
+
+</body>
+</html>
