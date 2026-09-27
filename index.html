@@ -114,39 +114,40 @@
   .prow:last-child{border-bottom:none}
   .prow:hover{background:var(--bg2)}
   .prow.on{background:#f0f7ff;box-shadow:inset 3px 0 0 var(--blue)}
-  .prow .st{width:8px;height:8px;border-radius:50%;flex:none}
-  .st.ok{background:var(--ok)}
-  .st.probe{background:var(--blue)}
-  .st.todo{background:var(--todo)}
-  .st.no{background:var(--gray3)}
+  /* ---------- 状态点 ----------
+     一个点 = 一条路，两个点 = 两条路都有。
+     形状和颜色【双通道】编码：只靠颜色的话红绿色盲分不清绿和琥珀。 */
+  .dots{display:inline-flex;align-items:center;gap:3px;flex:none}
+  .dots i{display:block;flex:none;border-radius:50%}
+  .d.ok{width:9px;height:9px;background:var(--ok)}
+  .d.todo{width:6px;height:6px;background:var(--gray3)}
+  .d.self{width:10px;height:10px;border:1.5px dashed #ff9500}
   .prow .nm{font-weight:500;flex:none;min-width:120px;letter-spacing:-.008em}
   .prow .dm{color:var(--gray3);font-size:13px;flex:1;
     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  /* 状态标签：四种状态四种颜色，比一个光秃秃的圆点好认 */
-  .prow .pv{font-size:12px;padding:3px 10px;border-radius:980px;
-    flex:none;white-space:nowrap}
-  .pv.ok{background:#e9f6ec;color:#1d7a3e}
-  .pv.probe{background:#e8f2ff;color:#0a4b8c}
-  .pv.todo{background:#fdf6e3;color:#8a6d1f}
-  .pv.no{background:var(--bg3);color:var(--gray3)}
+  /* 做不了：整行变淡、不给箭头。但仍留在列表里 —— 分类要完整。 */
+  .prow.dim{opacity:.45}
+  .prow.dim:hover{background:#fff}
+  .prow.dim .arw{display:none}
 
-  /* 图例 —— 没有它，用户看不懂那些彩色圆点是干嘛的 */
+  /* 图例 —— 【常驻】。没有它用户猜不出那些点是什么（这个坑踩过）。 */
   .legend{display:flex;flex-wrap:wrap;gap:8px 22px;
-    font-size:13px;color:var(--gray);margin:16px 0 14px}
+    font-size:13px;color:var(--gray);margin:0 0 14px}
   .legend span{display:inline-flex;align-items:center;gap:7px}
-  .legend i{width:8px;height:8px;border-radius:50%;flex:none}
-  .legend i.ok{background:var(--ok)}
-  .legend i.probe{background:var(--blue)}
-  .legend i.todo{background:var(--todo)}
-  .legend i.no{background:var(--gray3)}
+  .legend i{display:block;flex:none;border-radius:50%}
+  .legend i.ok{width:9px;height:9px;background:var(--ok)}
+  .legend i.todo{width:6px;height:6px;background:var(--gray3)}
+  .legend i.self{width:10px;height:10px;border:1.5px dashed #ff9500}
+  .legend i.dim{width:16px;height:9px;border-radius:3px;background:var(--bg3)}
   @media(max-width:640px){.legend{flex-direction:column;gap:7px}}
+
+  /* 行尾箭头 —— iOS 那种 chevron：整行可点，悬停才变蓝并右移 2px */
   .prow .arw{
-    color:var(--gray3);flex:none;font-size:13px;text-decoration:none;
-    padding:5px 10px;border-radius:7px;transition:.13s;
+    color:#c7c7cc;flex:none;font-size:17px;line-height:1;text-decoration:none;
+    transition:transform .13s,color .13s;
   }
-  .prow .arw:hover{background:var(--bg3);color:var(--blue)}
-  .prow .arw:active{background:#e4e4e9}
+  .prow:hover .arw{color:var(--blue);transform:translateX(2px)}
   @media(max-width:640px){
     .prow .nm{min-width:auto}
     .prow .dm{display:none}
@@ -161,18 +162,61 @@
   .empty{padding:24px 18px;color:var(--gray3);font-size:14px;line-height:1.65}
   .empty b{color:var(--ink2)}
 
-  /* 分类按钮 */
-  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin:22px 0 12px}
-  .tab{
-    padding:7px 15px;border-radius:980px;font-size:13.5px;
+  /* ---------- 筛选条（状态 × 分类，两层都可多选）---------- */
+  .frow{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;font-size:12.5px;
+    padding:5px 12px;border-radius:980px;font-family:inherit;
     border:1px solid var(--line);background:#fff;color:var(--gray);
-    cursor:pointer;transition:.14s;font-family:inherit;
+    cursor:pointer;transition:.14s;
   }
-  .tab:hover{border-color:var(--gray3);color:var(--ink)}
-  .tab.on{background:var(--ink);border-color:var(--ink);color:#fff}
-  .tab .n{opacity:.5;margin-left:6px;font-size:12px;font-variant-numeric:tabular-nums}
-  .tab.on .n{opacity:.7}
-  .tabs-hint{font-size:12.5px;color:var(--gray3);margin:0 0 12px}
+  .chip:hover{border-color:var(--gray3);color:var(--ink)}
+  .chip.on{background:var(--bg2);border-color:#c7c7cc;color:var(--ink)}
+  .chip.zero{opacity:.4}
+  .chip .n{opacity:.55;font-size:12px;font-variant-numeric:tabular-nums}
+  .chip i{display:block;flex:none;border-radius:50%}
+  .chip i.ok{width:9px;height:9px;background:var(--ok)}
+  .chip i.todo{width:6px;height:6px;background:var(--gray3)}
+  .chip i.self{width:10px;height:10px;border:1.5px dashed #ff9500}
+
+  /* 已选条件 —— 一眼看清「我现在在看什么」，每个都能单独取消 */
+  .selbar{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:10px 18px;background:var(--bg2);
+    border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);
+  }
+  .selbar .lb{font-size:12.5px;color:var(--gray3)}
+  .selbar .sc{
+    display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-family:inherit;
+    background:#fff;border:1px solid #c7c7cc;border-radius:980px;padding:4px 10px;
+    cursor:pointer;color:var(--ink);
+  }
+  .selbar .sc:hover{border-color:var(--gray3)}
+  .selbar .sc b{font-weight:400;color:var(--gray3)}
+  .selbar .clr{margin-left:auto;font-size:12.5px;color:var(--blue);
+    background:none;border:0;cursor:pointer;font-family:inherit;padding:4px 0}
+  .cnt{font-size:12.5px;color:var(--gray3);margin:0 0 12px;font-variant-numeric:tabular-nums}
+
+  /* 标题行右侧：视图切换 + 搜索 */
+  .hdright{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:980px;padding:2px;background:#fff}
+  .seg .sg{
+    font:inherit;font-size:12.5px;padding:5px 14px;border:0;background:none;
+    color:var(--gray);border-radius:980px;cursor:pointer;transition:.14s;
+  }
+  .seg .sg:hover{color:var(--ink)}
+  .seg .sg.on{background:var(--ink);color:#fff}
+
+  /* 翻页 */
+  .pager{display:flex;align-items:center;gap:6px;justify-content:center;margin:18px 0 0}
+  .pager button{
+    font:inherit;font-size:13px;min-width:34px;padding:6px 10px;border-radius:9px;
+    border:1px solid var(--line);background:#fff;color:var(--gray);cursor:pointer;transition:.14s;
+  }
+  .pager button:hover:not(:disabled){border-color:var(--gray3);color:var(--ink)}
+  .pager button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .pager button:disabled{opacity:.35;cursor:default}
+  .pager .gap{color:var(--gray3);font-size:13px;padding:0 2px}
 
   /* ---------- 步骤面板 ---------- */
   .panel{display:none;margin-top:20px;border:1px solid var(--line);
@@ -289,7 +333,7 @@
   <!-- ---------- 数据条 ---------- -->
   <div class="stats">
     <div class="stat"><div class="n" id="s-total">—</div><div class="l">覆盖平台</div></div>
-    <div class="stat"><div class="n ok" id="s-ok">2</div><div class="l">已验证可用</div></div>
+    <div class="stat"><div class="n ok" id="s-ok">2</div><div class="l">平台可导</div></div>
     <div class="stat"><div class="n">0</div><div class="l">需要安装的程序</div></div>
     <div class="stat"><div class="n">0</div><div class="l">网络请求</div></div>
   </div>
@@ -301,18 +345,26 @@
         <h2>平台支持</h2>
         <p>不挑平台 —— 打开订单页它自己就认出来了，不是订单页则安安静静不打扰。</p>
       </div>
-      <input class="search" id="q" type="search" placeholder="搜索平台…">
+      <div class="hdright">
+        <div class="seg" id="seg" role="group" aria-label="切换视图">
+          <button type="button" class="sg on" data-v="all">全部平台</button>
+          <button type="button" class="sg" data-v="hot">热度前八</button>
+        </div>
+        <input class="search" id="q" type="search" placeholder="搜索平台…  Ctrl+K">
+      </div>
     </div>
     <div class="legend">
-      <span><i class="ok"></i>已验证可用 —— 数据逐行核对过</span>
-      <span><i class="probe"></i>链接已确认 —— 能打开，数据未核对</span>
-      <span><i class="todo"></i>待验证 —— 还没试过</span>
-      <span><i class="no"></i>暂不支持 —— 平台没有网页版订单</span>
+      <span><i class="ok"></i>平台可导 —— 脚本能抓到</span>
+      <span><i class="self"></i>平台自导 —— 平台自己带导出</span>
+      <span><i class="todo"></i>暂未开发 —— 还没适配</span>
+      <span><i class="dim"></i>做不了 —— 整行变淡，不给入口</span>
     </div>
-    <div class="plist" id="hotlist"></div>
-    <div class="tabs" id="tabs"></div>
-    <p class="tabs-hint" id="tabs-hint"></p>
+    <div class="frow" id="fstat" role="group" aria-label="按导出方式筛选"></div>
+    <div class="frow" id="fcat" role="group" aria-label="按平台分类筛选"></div>
+    <p class="cnt" id="cnt"></p>
     <div class="plist" id="plist"></div>
+    <div class="pager" id="pager"></div>
+    <p class="cnt" id="hint" style="margin:14px 0 0;text-align:center"></p>
   </section>
 
   <!-- ---------- 使用方法 ---------- -->
@@ -539,7 +591,7 @@ var PLATFORMS = [
     url:'https://mobile.yangkeduo.com/orders.html', note:'需扫码登录', steps:_pddSteps,
     notes:[['tip','加载多少 ≠ 导出多少。先用「加载更多」把订单刷出来，再用滑动条决定导多少条。'],
            ['ok','表格底部自动算好 订单总额 / 已退款 / 实际支出。「备注」列会写明哪些行需要核对。']] },
-  { cat:'综合电商', name:'淘宝 / 天猫', domain:'trade.taobao.com', status:'ok', method:'script',
+  { cat:'综合电商', name:'淘宝 / 天猫', domain:'trade.taobao.com', status:'ok', method:'script', self:1,
     url:'https://trade.taobao.com/trade/itemlist/list_bought_items.htm',
     steps:[
       ['登录','进入「已买到的宝贝」。'],
@@ -551,7 +603,7 @@ var PLATFORMS = [
     notes:[['ok','两种随便挑：<b>脚本</b>会连分类和汇总一起算好；<b>官方导出</b>一次 10 页更省事，但格式是淘宝自己的，暂时不会并进脚本的总表。']] },
   { cat:'综合电商', name:'京东', domain:'order.jd.com', status:'ok', method:'script', url:'https://order.jd.com/center/list.action',
     notes:[['tip','京东的订单状态叫法和别家不同（「等待收货」「已完成」这类）。脚本已专门收录，导出后随手核对一两行金额更稳。']] },
-  { cat:'综合电商', name:'1688', domain:'trade.1688.com', status:'todo', method:'script', url:'https://trade.1688.com/order/buyer_order_list.htm',
+  { cat:'综合电商', name:'1688', domain:'trade.1688.com', status:'todo', method:'script', self:1, url:'https://trade.1688.com/order/buyer_order_list.htm',
     notes:[
       ['tip','1688 一单里会同时出现「单价 / 总金额 / 实付」三个数，脚本取最小的那个（实付通常最小）。备注列若写「取了最小值」，核对一下就行。'],
       ['warn','1688 的订单页结构比较特殊，脚本还在适配中。着急用的话，1688 页面自带导出按钮，可以直接用它导出。']
@@ -583,8 +635,9 @@ var PLATFORMS = [
 
   /* ---------- 内容 / 社交电商 ---------- */
   { cat:'内容电商', name:'小红书', domain:'xiaohongshu.com', status:'todo', method:'script', url:'https://www.xiaohongshu.com/', note:'进去后找「我的订单」' },
-  { cat:'内容电商', name:'抖音商城', domain:'douyin.com', status:'no', method:'script',
-    why:'订单只存在抖音 App 里，网页版没有订单列表页，抓不到。' },
+  { cat:'内容电商', name:'抖音商城', domain:'douyin.com', status:'todo', method:'script',
+    url:'https://www.douyin.com/',
+    notes:[['tip','网页版登录后，在个人中心里找「我的订单」。这个页面脚本还没实测过 —— 试一次就知道。']] },
   { cat:'内容电商', name:'快手小店', domain:'kuaishou.com', status:'no', method:'script',
     why:'订单只存在快手 App 里，网页版没有订单列表页，抓不到。' },
   { cat:'内容电商', name:'哔哩哔哩会员购', domain:'bilibili.com', status:'todo', method:'script', url:'https://show.bilibili.com/', note:'进去后找「我的订单」' },
@@ -611,8 +664,9 @@ var PLATFORMS = [
   { cat:'二手回收', name:'多抓鱼', domain:'duozhuayu.com', status:'todo', method:'script', url:'https://www.duozhuayu.com/', note:'进去后找「我的订单」' },
 
   /* ---------- 潮流 / 垂直 ---------- */
-  { cat:'潮流垂直', name:'得物', domain:'dewu.com', status:'no', method:'script',
-    why:'订单只存在得物 App 里，网页版没有订单列表页，抓不到。' },
+  { cat:'潮流垂直', name:'得物', domain:'dewu.com', status:'todo', method:'script',
+    url:'https://www.dewu.com/',
+    notes:[['warn','得物官网主要用于浏览商品和下载 App，网页版能不能看订单还没确认过。去试一次就知道 —— 能抓到的话就把它标成已验证。']] },
   { cat:'潮流垂直', name:'nice', domain:'nice.com', status:'no', method:'script',
     why:'订单只存在 nice App 里，网页版没有订单列表页，抓不到。' },
   { cat:'潮流垂直', name:'识货', domain:'shihuo.cn', status:'todo', method:'script', url:'https://www.shihuo.cn/', note:'进去后找「我的订单」' },
@@ -637,51 +691,110 @@ var PLATFORMS = [
   { cat:'旅行出行', name:'12306', domain:'12306.cn', status:'todo', method:'script', url:'https://www.12306.cn/', note:'进去后找「我的订单」' }
 ];
 
-/* 常用平台 —— 置顶显示，省掉 90% 的翻找。改这里就行 */
-var HOT = ['拼多多', '淘宝 / 天猫', '京东', '1688', '闲鱼',
-           '唯品会', '小米商城', '抖音商城'];
+/* 关掉入口的平台 —— 数据保留，只是【不渲染】。
+   （机制当作开关留着，名单现在是空的；加名字进去即可关掉某个平台） */
+var HIDDEN = [];
+PLATFORMS.forEach(function (p) { if (HIDDEN.indexOf(p.name) >= 0) p.hidden = 1; });
+
+/* 只保留显示的 —— 所有渲染都从这里过一道 */
+function visible(list) {
+  return list.filter(function (p) { return !p.hidden; });
+}
+
+/* ---------- 三类口径（2026-09-26 用户定的）----------
+   平台可导 = 脚本能抓到（原来的 ok / probe）
+   平台自导 = 平台自己带导出按钮 → 用 p.self 标记，**可以和其他类叠加**
+   暂未开发 = 脚本还没适配出来（原来的 todo / no）
+   其中「做不了」(no) 也算暂未开发，但整行变淡、不给箭头，跟真·没试过的区分开。 */
+function clsOf(p) {
+  return (p.status === 'ok' || p.status === 'probe') ? 'ok' : 'todo';
+}
+function isDead(p) { return p.status === 'no'; }
+
+/* 一个平台能同时命中几个筛选类 */
+function classesOf(p) {
+  var a = [clsOf(p)];
+  if (p.self) a.push('self');
+  return a;
+}
+
+/* 状态点 —— 一个点 = 一条路，两个点 = 两条路都有。
+   形状和颜色【双通道】编码，只靠颜色的话红绿色盲分不清绿和琥珀。
+   顺序（2026-09-26 用户要求）：**附加的「平台自导」黄点在左，状态点在右** ——
+   状态点的位置固定在最右，视线扫一列就齐，不会因为多一个点就参差。 */
+function dotsOf(p) {
+  if (isDead(p)) return '';                    // 做不了：不给点（整行变淡）
+  var h = '<span class="dots">';
+  if (p.self) h += '<i class="d self"></i>';   // 先黄（平台自导）
+  h += clsOf(p) === 'ok' ? '<i class="d ok"></i>' : '<i class="d todo"></i>';  // 后绿/灰
+  return h + '</span>';
+}
+
+/* 三类文案 —— 图例 / 筛选 / 面板共用这一处定义 */
+var CLS_TXT = { ok: '平台可导', self: '平台自导', todo: '暂未开发' };
+
+/* 面板徽标：「平台自导」是叠加的，两个都有就都写 */
+function badgeTxt(p) {
+  if (isDead(p)) return CLS_TXT.todo;
+  return CLS_TXT[clsOf(p)] + (p.self ? ' · ' + CLS_TXT.self : '');
+}
+
+/* 置顶的那 8 个 —— 按购物量排的前八（依据 2026-06 QuestMobile 月活）：
+     淘宝/天猫 10.44亿 · 拼多多 7.03亿 · 京东 6.76亿 · 抖音商城 1.29亿
+     · 闲鱼 1.02亿 · 美团 · 饿了么（本地生活，量级同档）· 得物 0.74亿
+   第九名是唯品会（0.68亿），和得物只差一点点，想换把它俩对调即可。 */
+var HOT = ['淘宝 / 天猫', '拼多多', '京东', '抖音商城', '闲鱼',
+           '美团', '饿了么', '得物'];
 PLATFORMS.forEach(function (p) { if (HOT.indexOf(p.name) >= 0) p.hot = 1; });
 
-/* 状态文案 —— 一处定义，列表、面板、图例共用 */
-var STATUS_TXT = {
-  ok:    '已验证可用',
-  probe: '链接已确认',
-  todo:  '待验证',
-  no:    '暂不支持'
-};
-
+/* 分类只列「还有平台显示」的类别 ——
+   否则关掉一个类别的全部平台后，会留下一个点进去空空的按钮 */
 var CATS = [];
-PLATFORMS.forEach(function (p) { if (CATS.indexOf(p.cat) < 0) CATS.push(p.cat); });
+visible(PLATFORMS).forEach(function (p) {
+  if (CATS.indexOf(p.cat) < 0) CATS.push(p.cat);
+});
 
 /* ---------- 渲染 ---------- */
-var hotEl = document.getElementById('hotlist');
-var listEl = document.getElementById('plist');
-var tabsEl = document.getElementById('tabs');
-var hintEl = document.getElementById('tabs-hint');
+var listEl  = document.getElementById('plist');
+var fstatEl = document.getElementById('fstat');
+var fcatEl  = document.getElementById('fcat');
+var cntEl   = document.getElementById('cnt');
+var hintEl  = document.getElementById('hint');
+var pagerEl = document.getElementById('pager');
+var segEl   = document.getElementById('seg');
 var current = null;
-var curCat = CATS[0];
+/* 两层筛选都可多选：层【内部】是「或」，层【之间】是「且」
+   —— 这是 faceted search 的标准语义（「蓝色或黑色」但「尺码10 且 蓝色」）*/
+var selStat = [], selCat = [];
+/* 视图：「全部平台」/「热度前八」。
+   热度排行榜原来是常驻的一整个区块，太长 —— 改成标题行右边那个小切换。 */
+var view = 'all';
+/* 一页 10 个 —— 63 个一次性全铺出来太长了 */
+var PAGE_SIZE = 10, curPage = 1;
 
 // 造一行
 function makeRow(p) {
   var row = document.createElement('div');
-  row.className = 'prow' + (current === p ? ' on' : '');
+  row.className = 'prow' + (current === p ? ' on' : '') + (isDead(p) ? ' dim' : '');
   row.setAttribute('role', 'button');
   row.tabIndex = 0;
 
   row.innerHTML =
-    '<span class="st ' + p.status + '"></span>' +
     '<span class="nm">' + p.name + '</span>' +
     '<span class="dm">' + p.domain + '</span>' +
-    '<span class="pv ' + p.status + '">' + STATUS_TXT[p.status] + '</span>';
+    dotsOf(p);
 
-  // 「打开 →」是真链接：点了直接开新标签页，不会只是选中
-  if (p.url) {
+  // 行尾是 iOS 那种 chevron：「做不了」的平台不给箭头（也没地方可去）
+  // ⚠ 大部分「暂未开发」的平台在数据里没写具体订单页地址 —— 之前就会【没有箭头、点不进去】，
+  //   等于没被测过就永远测不了。这里退回平台首页，配合备注里那句「进去后找我的订单」就能用。
+  if (!isDead(p)) {
     var a = document.createElement('a');
     a.className = 'arw';
-    a.href = p.url;
+    a.href = p.url || ('https://' + p.domain + '/');
     a.target = '_blank';
     a.rel = 'noopener';
-    a.textContent = '打开 →';
+    a.textContent = '›';
+    a.title = p.url ? '打开订单页' : '打开首页，进去找「我的订单」';
     a.onclick = function (e) { e.stopPropagation(); };
     row.appendChild(a);
   }
@@ -701,23 +814,82 @@ function groupHeader(text) {
   return d;
 }
 
-function renderAll(filter) {
-  var f = (filter || '').trim().toLowerCase();
-  hotEl.innerHTML = ''; listEl.innerHTML = ''; tabsEl.innerHTML = '';
+/* 一个平台是否通过当前筛选。搜索词也算一个条件（和筛选是「且」的关系）。 */
+function pass(p, f) {
+  if (f && (p.name + ' ' + p.domain + ' ' + p.cat).toLowerCase().indexOf(f) < 0) return false;
+  if (selStat.length && !selStat.some(function (k) { return classesOf(p).indexOf(k) >= 0; })) return false;
+  if (selCat.length && selCat.indexOf(p.cat) < 0) return false;
+  return true;
+}
 
-  // ---- 搜索：不分常用/分类，直接出结果 ----
+/* 造一个筛选胶囊。数量是「按了它之后会看到几个」—— 防止选了才发现是空的。 */
+function makeChip(label, n, on, dotCls, onclick) {
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'chip' + (on ? ' on' : '') + (n === 0 && !on ? ' zero' : '');
+  b.innerHTML = (dotCls ? '<i class="' + dotCls + '"></i>' : '') +
+                label + '<span class="n">' + n + '</span>';
+  b.onclick = onclick;
+  return b;
+}
+
+/* 翻页条。页码多了折叠成 1 … 4 5 6 … 12 */
+function renderPager(pages) {
+  pagerEl.innerHTML = '';
+  if (pages <= 1) return;
+
+  function mk(label, page, on, dis) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    if (on) b.className = 'on';
+    if (dis) b.disabled = true;
+    else b.onclick = function () { curPage = page; renderAll(); jumpToList(); };
+    return b;
+  }
+
+  pagerEl.appendChild(mk('‹ 上一页', curPage - 1, false, curPage === 1));
+  var nums = [];
+  for (var i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || Math.abs(i - curPage) <= 1) nums.push(i);
+    else if (nums[nums.length - 1] !== '…') nums.push('…');
+  }
+  nums.forEach(function (n) {
+    if (n === '…') {
+      var s = document.createElement('span');
+      s.className = 'gap';
+      s.textContent = '…';
+      pagerEl.appendChild(s);
+    } else {
+      pagerEl.appendChild(mk(String(n), n, n === curPage, false));
+    }
+  });
+  pagerEl.appendChild(mk('下一页 ›', curPage + 1, false, curPage === pages));
+}
+
+/* 翻页后把列表拉回视野 —— 不然换页了你还停在页面底部，看不出变化 */
+function jumpToList() {
+  var box = document.getElementById('plats');
+  if (box && box.scrollIntoView) box.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+
+function renderAll() {
+  var f = (document.getElementById('q').value || '').trim().toLowerCase();
+  listEl.innerHTML = ''; pagerEl.innerHTML = '';
+  fstatEl.innerHTML = ''; fcatEl.innerHTML = '';
+  var all = visible(PLATFORMS);
+
+  // ---- 搜索：只出结果，暂时收起筛选和视图切换 ----
   if (f) {
-    var hits = PLATFORMS.filter(function (p) {
-      return (p.name + ' ' + p.domain + ' ' + p.cat).toLowerCase().indexOf(f) >= 0;
-    });
-    hotEl.style.display = 'none';
-    tabsEl.style.display = 'none';
-    hintEl.style.display = 'none';
+    var hits = all.filter(function (p) { return pass(p, f); });
+    segEl.style.display = 'none';                 // 只收视图切换，搜索框本身留着
+    fstatEl.style.display = 'none'; fcatEl.style.display = 'none';
+    cntEl.style.display = 'none'; hintEl.style.display = 'none';
 
     if (!hits.length) {
       listEl.innerHTML = '<div class="empty">' +
         '<b>没找到匹配的平台。</b><br>' +
-        '但这不代表不支持 —— 脚本是平台无关的，它不认识具体平台，只在页面上找订单卡片。<br>' +
+        '但这不代表不支持 —— 脚本不认平台名，它只在你打开的那个页面上找订单卡片。<br>' +
         '直接打开那个网站的订单页试试，多半能用。' +
         '</div>';
       return;
@@ -727,38 +899,109 @@ function renderAll(filter) {
     return;
   }
 
-  // ---- 常用 ----
-  hotEl.style.display = '';
-  tabsEl.style.display = '';
-  hintEl.style.display = '';
+  segEl.style.display = '';
+  cntEl.style.display = ''; hintEl.style.display = '';
+  hintEl.textContent = '列表里没有你用的平台也不代表不支持 —— 脚本不认平台名，'
+                     + '直接打开那个网站的订单页试试，多半能用。';
 
-  hotEl.appendChild(groupHeader('常用'));
-  PLATFORMS.filter(function (p) { return p.hot; })
-           .forEach(function (p) { hotEl.appendChild(makeRow(p)); });
+  // ---- 视图二：热度前八（这是「换一种看的方式」，不是筛选条件）----
+  if (view === 'hot') {
+    fstatEl.style.display = 'none'; fcatEl.style.display = 'none';
+    var hotList = HOT.map(function (n) {          // 按 HOT 顺序取，第一名排第一
+      return all.filter(function (p) { return p.name === n; })[0];
+    }).filter(function (p) { return !!p; });
+    cntEl.textContent = '按购物量排的前八 · 共 ' + hotList.length + ' 个';
+    listEl.appendChild(groupHeader('热度排行榜'));
+    hotList.forEach(function (p) { listEl.appendChild(makeRow(p)); });
+    return;
+  }
 
-  // ---- 分类按钮 ----
-  var tabs = CATS.concat(['全部']);
-  tabs.forEach(function (c) {
-    var b = document.createElement('button');
-    b.className = 'tab' + (curCat === c ? ' on' : '');
-    b.type = 'button';
-    var n = (c === '全部') ? PLATFORMS.length
-                           : PLATFORMS.filter(function (p) { return p.cat === c; }).length;
-    b.innerHTML = c + '<span class="n">' + n + '</span>';
-    b.onclick = function () {
-      curCat = c;
-      renderAll(document.getElementById('q').value);
-    };
-    tabsEl.appendChild(b);
+  fstatEl.style.display = ''; fcatEl.style.display = '';
+
+  // ---- 第一层筛选：导出方式（三类，可多选）----
+  [['ok', '平台可导'], ['self', '平台自导'], ['todo', '暂未开发']]
+    .forEach(function (t) {
+      var key = t[0];
+      var n = all.filter(function (p) {
+        if (selCat.length && selCat.indexOf(p.cat) < 0) return false;   // 跟另一层条件联动计数
+        return classesOf(p).indexOf(key) >= 0;
+      }).length;
+      fstatEl.appendChild(makeChip(t[1], n, selStat.indexOf(key) >= 0, 'd ' + key, function () {
+        var i = selStat.indexOf(key);
+        if (i >= 0) selStat.splice(i, 1); else selStat.push(key);
+        curPage = 1;                     // 换条件必须回到第一页，否则会停在空白页
+        renderAll();
+      }));
+    });
+
+  // ---- 第二层筛选：分类（可多选）----
+  CATS.forEach(function (c) {
+    var n = all.filter(function (p) {
+      if (selStat.length && !selStat.some(function (k) { return classesOf(p).indexOf(k) >= 0; })) return false;
+      return p.cat === c;
+    }).length;
+    fcatEl.appendChild(makeChip(c, n, selCat.indexOf(c) >= 0, '', function () {
+      var i = selCat.indexOf(c);
+      if (i >= 0) selCat.splice(i, 1); else selCat.push(c);
+      curPage = 1;
+      renderAll();
+    }));
   });
 
-  // ---- 该分类的列表 ----
-  var items = (curCat === '全部') ? PLATFORMS
-            : PLATFORMS.filter(function (p) { return p.cat === curCat; });
-  listEl.appendChild(groupHeader(curCat === '全部' ? '全部平台' : curCat));
-  items.forEach(function (p) { listEl.appendChild(makeRow(p)); });
+  // ---- 结果 ----
+  var items = all.filter(function (p) { return pass(p, ''); });
 
-  hintEl.textContent = '列表里没有你用的平台也不代表不支持 —— 脚本是平台无关的，直接打开那个网站的订单页试试。';
+  // 已选条件单独一行 —— 一眼看清「我现在在看什么」，每个都能单独取消
+  if (selStat.length || selCat.length) {
+    var bar = document.createElement('div');
+    bar.className = 'selbar';
+    var h = '<span class="lb">已选</span>';
+    selStat.concat(selCat).forEach(function (k) {
+      h += '<button type="button" class="sc" data-k="' + k + '">'
+         + (CLS_TXT[k] || k) + '<b>×</b></button>';
+    });
+    h += '<button type="button" class="clr">清空</button>';
+    bar.innerHTML = h;
+    Array.prototype.forEach.call(bar.querySelectorAll('.sc'), function (b2) {
+      b2.onclick = function () {
+        var k = b2.getAttribute('data-k');
+        var i = selStat.indexOf(k); if (i >= 0) selStat.splice(i, 1);
+        var j = selCat.indexOf(k);  if (j >= 0) selCat.splice(j, 1);
+        curPage = 1;
+        renderAll();
+      };
+    });
+    bar.querySelector('.clr').onclick = function () {
+      selStat = []; selCat = []; curPage = 1; renderAll();
+    };
+    listEl.appendChild(bar);
+  }
+
+  if (!items.length) {
+    cntEl.textContent = '没有匹配的平台';
+    // 零结果不能只给一句「没找到」—— 要说清是哪个条件导致的，并且能一键去掉
+    var worst = selStat.length ? CLS_TXT[selStat[0]] : selCat[0];
+    listEl.insertAdjacentHTML('beforeend', '<div class="empty">' +
+      '<b>这个组合下没有平台。</b><br>' +
+      '多半是「' + worst + '」这个条件太窄 —— 去掉它就能看到更多。' +
+      '</div>');
+    return;
+  }
+
+  // ---- 翻页：一页 10 个 ----
+  var pages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  if (curPage > pages) curPage = pages;
+  if (curPage < 1) curPage = 1;
+  var page = items.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
+
+  cntEl.textContent = '第 ' + curPage + ' / ' + pages + ' 页 · 共 ' + items.length + ' 个平台'
+    + ((selStat.length || selCat.length) ? '（全部 ' + all.length + ' 个）' : '');
+
+  listEl.appendChild(groupHeader(
+    selCat.length === 1 ? selCat[0]
+      : (selCat.length ? '多个分类' : '全部平台')));
+  page.forEach(function (p) { listEl.appendChild(makeRow(p)); });
+  renderPager(pages);
 }
 
 /* ---------- 渲染步骤面板 ---------- */
@@ -769,8 +1012,9 @@ function showPanel(p) {
   document.getElementById('ph-name').textContent = p.name;
 
   var badge = document.getElementById('ph-badge');
-  badge.textContent = STATUS_TXT[p.status];
-  badge.className = 'badge ' + p.status;
+  badge.textContent = badgeTxt(p);
+  // 徽标颜色跟列表里的点保持一致（三类；做不了按暂未开发的颜色）
+  badge.className = 'badge ' + (isDead(p) ? 'todo' : clsOf(p));
 
   var body = document.getElementById('ph-body');
   body.innerHTML = '';
@@ -857,19 +1101,45 @@ function defaultSteps(p) {
   ];
 }
 
-/* ---------- 搜索 ---------- */
-document.getElementById('q').oninput = function () {
-  renderAll(this.value);
-};
+/* ---------- 搜索 ----------
+   顺手给个键盘快捷键：Ctrl+K（或 /）直接跳到搜索框，Esc 清空。
+   这是 Raycast 那套「Ctrl+K 唤起」的轻量版，成本低、手感好。 */
+document.getElementById('q').oninput = function () { curPage = 1; renderAll(); };
+
+/* 视图切换：全部平台 / 热度前八 */
+Array.prototype.forEach.call(segEl.querySelectorAll('.sg'), function (b) {
+  b.onclick = function () {
+    view = b.getAttribute('data-v');
+    curPage = 1;
+    Array.prototype.forEach.call(segEl.querySelectorAll('.sg'), function (o) {
+      o.classList.toggle('on', o === b);
+    });
+    renderAll();
+  };
+});
+
+document.addEventListener('keydown', function (e) {
+  var q = document.getElementById('q');
+  if (!q) return;
+  var typing = /^(INPUT|TEXTAREA)$/.test((e.target && e.target.tagName) || '');
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault(); q.focus(); q.select(); return;
+  }
+  if (e.key === '/' && !typing) { e.preventDefault(); q.focus(); return; }
+  if (e.key === 'Escape' && document.activeElement === q) {
+    q.value = ''; renderAll(); q.blur();
+  }
+});
 
 /* ---------- 数据条 ---------- */
-document.getElementById('s-total').textContent = PLATFORMS.length;
+document.getElementById('s-total').textContent = visible(PLATFORMS).length;
+// 「平台可导」= 脚本能抓到的（原来的 ok + probe）
 document.getElementById('s-ok').textContent =
-  PLATFORMS.filter(function (p) { return p.status === 'ok'; }).length;
+  visible(PLATFORMS).filter(function (p) { return clsOf(p) === 'ok'; }).length;
 
 /* ---------- 初始：默认选中第一个 ---------- */
 current = PLATFORMS[0];
-renderAll('');
+renderAll();
 showPanel(PLATFORMS[0]);
 
 /* ---------- 安装地址 ----------
