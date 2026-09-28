@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         订单抓取（拼多多 / 淘宝）
 // @namespace    xiaoshu
-// @version      3.9.2
+// @version      3.9.3
 // @description  在订单页一键抓取订单表格，导出 CSV。脚本自己不联网、不读 cookie、不调接口，只读屏幕上已有的内容；分页的平台（如京东）会替你点「下一页」。
 // @author       xiaoshu
 // @match        *://*.yangkeduo.com/*
@@ -16,9 +16,9 @@
 // @match        *://*.amazon.cn/*
 // @match        *://*.vip.com/*
 // @match        *://*.jumei.com/*
-// @match        *://*.mogujie.com/*
+// @match        *://*.mogu.com/*
 // @match        *://*.mi.com/*
-// @match        *://*.youpin.mi.com/*
+// @match        *://*.xiaomiyoupin.com/*
 // @match        *://*.vmall.com/*
 // @match        *://*.honor.com/*
 // @match        *://*.opposhop.cn/*
@@ -262,13 +262,24 @@
   function saveAcc(rows) { storedSet(ACC_KEY, JSON.stringify(rows.slice(-3000))); }
 
   // 把本页抓到的并进累积池，按原始文本去重
+  /* 去重用的键：**优先抠订单号**，抠不到才退回整条原文。
+     ⚠ 以前只用原文当键 —— 跨页累积时卡片文本哪怕变一个字（状态从「待收货」变「已签收」、
+     倒计时变了一秒、店铺名多一个空格），同一个订单就会被当成新的再存一遍，
+     导出的表里就出现「同一个订单两条」。用户实际碰到过。
+     退回原文是没办法的办法，但至少不比原来更差。 */
+  function dedupeKey(r) {
+    var m = String((r && r.text) || '').match(/订单号[：:＃#\s]*([A-Za-z0-9\-]{6,})/);
+    return m ? ('no:' + m[1]) : ('txt:' + ((r && r.text) || ''));
+  }
+
   function mergeAcc(pageRows) {
     var acc = loadAcc();
     var seen = {};
-    for (var i = 0; i < acc.length; i++) seen[acc[i].text] = 1;
+    for (var i = 0; i < acc.length; i++) seen[dedupeKey(acc[i])] = 1;
     var added = 0;
     for (var j = 0; j < pageRows.length; j++) {
-      if (!seen[pageRows[j].text]) { seen[pageRows[j].text] = 1; acc.push(pageRows[j]); added++; }
+      var k = dedupeKey(pageRows[j]);
+      if (!seen[k]) { seen[k] = 1; acc.push(pageRows[j]); added++; }
     }
     saveAcc(acc);
     return { rows: acc, added: added };
@@ -1506,6 +1517,8 @@
       pageSig: pageSig,
       findCards: findCards,
       extract: extract,
+      mergeAcc: mergeAcc,
+      dedupeKey: dedupeKey,
       scanComposed: scanComposed,
       deepReport: deepReport,
       diagnose: diagnose,
