@@ -28,32 +28,47 @@
   .wrap{max-width:var(--page);margin:0 auto;padding:0 28px}
   @media(max-width:640px){.wrap{padding:0 18px}}
 
-  /* ---------- 左侧目录 ----------
-     宽屏（>=900px）常驻在左边；窄屏（<900px）收进顶栏的「目录」按钮 + 抽屉。
-     ⚠ 这个 900 是【唯一阈值】，下面 .toc / .shell / nav .in / nav .links
-       全部跟着它走。曾经这里的分工是「1080 收目录、720 藏顶栏链接」——
-       两个阈值不一致，于是 721–1080 这段【目录已经收起了、按钮却还没出来】，
-       目录彻底摸不到。改成一个阈值就不会再出现这种空档。
-     目录 sticky 贴在顶栏下面。
-     ⚠ 目录【贴窗口最左边】—— 所以宽屏下这一层的左 padding 是 0，
-        左边距改由 .toc 自己出（见下面的 padding-left），右边距留给 .content。
-        ⚠ 窄屏没有目录，padding 必须恢复对称 —— 否则内容会顶到右边缘、溢出屏幕。 */
-  .shell{max-width:var(--page);margin:0 auto;padding:0 28px 0 0;display:flex;
+  /* ---------- 左侧目录（悬浮滑出式）----------
+     【关键设计】目录【不再常驻、不占布局】——
+     它是 position:fixed 的悬浮层，从屏幕左缘滑出、盖在页面上。
+     所以主内容区永远占满整个宽度，不会再被左栏挤窄（用户明确要的）。
+
+     全宽度只有【一套逻辑】：点按钮 → 从左滑出 + 遮罩；再点/Esc/点链接 → 滑回去。
+     历史上曾有过「宽屏常驻左栏 + 窄屏抽屉」两套，但宽屏常驻会挤占内容区，
+     已废弃。
+
+     ⚠ 900px 仍是【唯一阈值】，但只用来控制「顶栏链接的显隐」和抽屉宽度，
+       不再决定目录的存在形态。
+     ⚠ .shell 的左右 padding 现在【全程对称】—— 目录在悬浮层里，
+       不再需要「左 padding=0 给目录让位」那套补偿。 */
+  .shell{max-width:var(--page);margin:0 auto;padding:0 28px;display:flex;
     align-items:flex-start;gap:0}
   .toc{
-    position:sticky;top:calc(var(--nav-h) + 26px);flex:none;width:228px;
-    max-height:calc(100vh - var(--nav-h) - 52px);overflow:auto;
-    display:flex;flex-direction:column;gap:2px;padding:0 22px 40px 0;
+    position:fixed;top:0;left:0;z-index:200;
+    height:100vh;height:100dvh;overflow:auto;
+    width:min(260px,82vw);
+    background:#fff;border-right:1px solid var(--line);
+    padding:0 14px 28px;
+    display:flex;flex-direction:column;gap:2px;
+    transform:translateX(-100%);
+    transition:transform .26s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 40px rgba(0,0,0,.10);
   }
-  @media(max-width:900px){
-    /* 目录没了 → 把左侧留白还给内容；右边距也补回来，两边对称 */
-    .shell{padding:0 28px}
-  }
+  .toc.open{transform:none}
+  /* 目录自己的头部：和顶栏同高（--nav-h），里面放个「目录」标题 + 关闭按钮。
+     没有它的话滑出来就是一块光秃秃的白板，和页面接不上、显得生硬。 */
+  .toc .th{flex:none;height:var(--nav-h);display:flex;align-items:center;
+    justify-content:space-between;padding:0 4px 0 10px;
+    border-bottom:1px solid var(--line2);margin:0 0 10px}
+  .toc .th .tt{font-size:13.5px;font-weight:600;color:var(--ink);
+    letter-spacing:-.01em}
+  .toc .th .x{width:28px;height:28px;display:flex;align-items:center;
+    justify-content:center;border:0;background:none;border-radius:7px;
+    color:var(--gray);cursor:pointer;padding:0;transition:background .15s,color .15s}
+  .toc .th .x:hover{background:var(--bg3);color:var(--ink)}
   @media(max-width:640px){
     .shell{padding:0 18px}
   }
-  .toc .lbl{font-size:11px;color:var(--gray3);letter-spacing:.09em;
-    text-transform:uppercase;padding:0 10px 8px}
   .toc a{
     display:block;text-decoration:none;font-size:13.5px;color:var(--gray);
     padding:7px 10px;border-radius:8px;border-left:2px solid transparent;
@@ -64,33 +79,33 @@
   .toc a.sub{padding-left:20px;font-size:12.5px}
   /* 内容列：目录右侧，占满剩余宽度；里面 .wrap 不再自己居中 */
   .content{flex:1;min-width:0}
-  .content>.wrap{max-width:none;padding:0 0 0 30px}
-  @media(max-width:640px){.content>.wrap{padding-left:0}}
-  /* 目录按钮：全宽度都显示。
-     宽屏（>900px）点它 = 收起/展开常驻左栏；窄屏（<=900px）点它 = 弹抽屉。
-     ⚠ 之前只在窄屏显示，宽屏用户找不到「目录」入口 —— 现在全宽度常驻。 */
+  /* ⚠ 这里原来是 padding-left:30px —— 给【常驻左栏】让位用的。
+     左栏改成悬浮层后，这 30px 属于白占，已去掉（用户要的「不影响主页面空间」）。 */
+  .content>.wrap{max-width:none;padding:0}
+  /* 目录按钮：全宽度常驻，点击滑出/收起左侧悬浮目录。
+     【视觉】刻意做成「无底色的轻图标按钮」—— 之前是灰底方块 + ☰ + 文字，
+     显得生硬、像个重控件。现在默认透明，hover/聚焦才浮出极淡的底，
+     和 Raycast / GitHub 的顶栏图标一致。
+     ⚠ 它【不占布局宽度】：负外边距让它溢出到 nav 的左 padding 区外，
+       所以品牌名和右侧导航的位置完全不受影响（用户要的「不挤主页面」）。 */
   .tocbtn{
-    display:inline-flex;align-items:center;gap:6px;flex:none;
-    font:inherit;font-size:14px;color:var(--ink2);cursor:pointer;
-    background:var(--bg3);border:0;border-radius:8px;padding:7px 12px;
+    display:inline-flex;align-items:center;gap:5px;flex:none;
+    font:inherit;font-size:13.5px;color:var(--gray);cursor:pointer;
+    background:none;border:0;border-radius:8px;padding:6px 9px;
+    margin-left:-9px;transition:background .15s,color .15s;
   }
-  .tocbtn:hover{background:var(--line2)}
-  /* 宽屏收起态：左栏整体隐藏，内容区拿回空间 */
-  .shell.toc-off>.toc{display:none}
-  .shell.toc-off{padding-left:28px}
-  @media(max-width:900px){
-    .toc{
-      position:fixed;top:0;left:0;bottom:0;width:250px;max-height:none;z-index:200;
-      background:#fff;border-right:1px solid var(--line);padding:22px 16px;
-      transform:translateX(-100%);transition:transform .24s cubic-bezier(.4,0,.2,1);
-      box-shadow:0 0 40px rgba(0,0,0,.10);
-    }
-    .toc.open{transform:none}
-    .content>.wrap{padding-left:0}
-    .mask{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:150;
-      opacity:0;pointer-events:none;transition:opacity .24s}
-    .mask.on{opacity:1;pointer-events:auto}
-  }
+  .tocbtn:hover{background:var(--bg3);color:var(--ink)}
+  .tocbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .tocbtn svg{opacity:.75}
+  .tocbtn:hover svg{opacity:1}
+  .tocbtn .t{letter-spacing:-.01em}
+  /* 遮罩：目录滑出时盖住页面，点它收起。
+     ⚠ 目录是悬浮层，遮罩必须有，否则用户看不到「点别处能关」。
+     z-index 必须【小于】.toc（200）、小于顶栏（100）也不行 —— 取 150 让它盖住
+     内容但被目录盖住。 */
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:150;
+    opacity:0;pointer-events:none;transition:opacity .26s}
+  .mask.on{opacity:1;pointer-events:auto}
   /* 锚点跳转后标题落在顶栏正下方，而不是被顶栏盖住 */
   section[id],footer[id]{scroll-margin-top:calc(var(--nav-h) + 18px)}
 
@@ -130,23 +145,12 @@
     -webkit-backdrop-filter:saturate(180%) blur(20px);
     border-bottom:1px solid var(--line2);
   }
-  /* ⚠ 宽屏下左边 padding = 0，和 .shell 保持一致（目录贴最左）——
-        否则 logo 和目录会错开 28px。
-        窄屏（<1080px）没有目录，padding 恢复对称。 */
-  nav .in{max-width:var(--page);margin:0 auto;padding:0 28px 0 0;height:100%;
+  /* ⚠ 顶栏 padding 全程【对称】(28px) —— 目录已改成悬浮层，
+     不再需要「左 padding=0 让 logo 和目录对齐」那套补偿。 */
+  nav .in{max-width:var(--page);margin:0 auto;padding:0 28px;height:100%;
     display:flex;align-items:center;gap:28px}
-  @media(max-width:900px){nav .in{padding:0 28px;gap:22px}}
+  @media(max-width:900px){nav .in{gap:22px}}
   @media(max-width:640px){nav .in{padding:0 18px;gap:18px}}
-  /* 宽屏：按钮排在品牌名前面，会把它往右挤、破坏「品牌名与左栏目录对齐」。
-     所以让按钮整体【向左溢出】(28px 抵掉 nav 的左 padding，再补 6px 当透气间隔)，
-     这样按钮左移、品牌名位置保持不动。 */
-  @media(min-width:901px){
-    nav .in>.tocbtn{margin-left:-34px;margin-right:0}
-  }
-  /* 窄屏：没有目录、padding 对称，不需要负外边距；只补一点右间距透气 */
-  @media(max-width:900px){
-    nav .in>.tocbtn{margin-right:4px}
-  }
   .brand{display:flex;align-items:center;gap:9px;font-size:15px;
     font-weight:600;letter-spacing:-.012em;text-decoration:none;flex:none}
   .brand .dot{width:20px;height:20px;border-radius:6px;
@@ -426,9 +430,9 @@
 <nav>
   <div class="in">
     <button class="tocbtn" id="tocbtn" type="button" aria-label="打开目录">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>目录
+      </svg><span class="t">目录</span>
     </button>
     <a class="brand" href="#"><span class="dot">订</span>订单导出</a>
     <div class="links">
@@ -456,7 +460,14 @@
 
 <div class="shell">
   <aside class="toc" id="toc">
-    <span class="lbl">目录</span>
+    <div class="th">
+      <span class="tt">目录</span>
+      <button class="x" id="tocclose" type="button" aria-label="收起目录">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
     <a href="#plats" class="on">平台支持</a>
     <a href="#how">使用方法</a>
     <a href="#faq">常见问题</a>
@@ -2331,10 +2342,6 @@ document.addEventListener('keydown', function (e) {
   var secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
   var mask = document.getElementById('mask');
   var btn = document.getElementById('tocbtn');
-  var shell = document.querySelector('.shell');
-  // 宽屏断点，必须与 CSS 里的 900px 保持一致 —— 两处不一致就会出现
-  // 「按钮在但点了没反应」或者「抽屉开了但 CSS 当宽屏处理」这类空档。
-  var WIDE = 901;
 
   function upd() {
     // 非教程视图（'' 以外）由视图状态说了算，不看滚动 —— 见上面 VIEW_LINKS 的注释。
@@ -2356,9 +2363,8 @@ document.addEventListener('keydown', function (e) {
   window.addEventListener('resize', upd);
   window.__updToc = upd;
 
-  // 收起时把 aria-expanded 也同步回去 —— 光给 <button> 加 aria-label 不够，
-  // 读屏用户要靠这个状态知道「现在目录是开还是关」。
-  function isWide() { return window.innerWidth >= WIDE; }
+  // 目录现在是【悬浮滑出层】，全宽度只有这一套逻辑（不再分宽屏/窄屏两支）。
+  // aria-expanded 要同步 —— 读屏用户靠这个知道「目录现在开没开」。
   function setOpen(on) {
     toc.classList.toggle('open', on);
     mask.classList.toggle('on', on);
@@ -2367,44 +2373,16 @@ document.addEventListener('keydown', function (e) {
       btn.setAttribute('aria-label', on ? '收起目录' : '打开目录');
     }
   }
-  // 宽屏：左栏常驻，按钮切换「收起/展开」——用 shell 上的类控制，不走抽屉。
-  //       收起态要清掉 open/mask，防止从窄屏拖宽过来时残留一层遮罩。
-  function setWideCollapsed(off) {
-    if (!shell) return;
-    shell.classList.toggle('toc-off', off);
-    toc.classList.remove('open');
-    mask.classList.remove('on');
-    if (btn) {
-      btn.setAttribute('aria-expanded', off ? 'false' : 'true');
-      btn.setAttribute('aria-label', off ? '打开目录' : '收起目录');
-    }
-  }
   function close() { setOpen(false); }
   if (btn) {
-    // 初始态按宽度给：宽屏目录可见 → aria-expanded=true；窄屏收起 → false。
-    // ⚠ 之前无条件 setOpen(false)，宽屏下会谎报「目录是收起的」，读屏用户会困惑。
-    if (isWide()) {
-      btn.setAttribute('aria-expanded', 'true');
-      btn.setAttribute('aria-label', '收起目录');
-    } else {
-      setOpen(false);
-    }
-    // 再点一下要能收起 —— 之前写死了只 add，点第二次没反应
-    btn.onclick = function () {
-      if (isWide()) {
-        setWideCollapsed(!shell.classList.contains('toc-off'));
-      } else {
-        setOpen(!toc.classList.contains('open'));
-      }
-    };
+    setOpen(false);                     // 初始一定是关的（目录是悬浮层，默认不占屏）
+    btn.onclick = function () { setOpen(!toc.classList.contains('open')); };
   }
   if (mask) mask.onclick = close;
+  var x = document.getElementById('tocclose');
+  if (x) x.onclick = close;            // 目录头部那个 × 也能关
   links.forEach(function (a) { a.addEventListener('click', close); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-  // 跨越断点时复位，避免「宽屏收起了 -> 拖窄 -> 抽屉状态串味」。
-  window.addEventListener('resize', function () {
-    if (isWide()) { toc.classList.remove('open'); mask.classList.remove('on'); }
-  });
 })();
 
 /* ---------- 数据条 ---------- */
