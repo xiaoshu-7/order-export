@@ -2175,12 +2175,30 @@ function showPanel(p) {
   }
 
   if (p.url) {
-    // 链接只填到首页的，别说「打开订单页」—— 那是骗人
-    var isHome = !!p.note || /^https?:\/\/[^/]+\/?$/.test(p.url);
+    // ⚠ 判断「链接是不是只到首页」只能看 URL 本身，【不能看 p.note】——
+    //   p.note 是「进去之后怎么办」的提示文字（如「需扫码登录」），
+    //   拿它当判据会把订单页也误标成首页：拼多多 url 明明是 orders.html，
+    //   却显示成「打开网站 →」，用户看着像进不去订单页。
+    var isHome = /^https?:\/\/[^/]+\/?$/.test(p.url);
     var a = document.createElement('a');
     a.className = 'btn p go';
     a.href = p.url; a.target = '_blank'; a.rel = 'noopener';
     a.textContent = isHome ? '打开网站 →' : '打开订单页 →';
+    // ⚠ 用户报过「点了完全没反应」。原因不是按钮坏了，是浏览器把新标签页
+    //   拦掉了（尤其页面从 file:// 打开时更常见），而且【不报错】。
+    //   这里给一条兜底：点完把地址显示出来，拦了也能手动复制过去。
+    a.onclick = function () {
+      var box = document.getElementById('go-fallback');
+      if (!box) {
+        box = document.createElement('p');
+        box.id = 'go-fallback';
+        box.className = 'go-hint';
+        a.parentNode.insertBefore(box, a.nextSibling);
+      }
+      box.innerHTML = '没跳转？说明浏览器把新标签页拦掉了。'
+        + '手动复制这个地址打开：<code>' + p.url + '</code>';
+      // 不阻止默认行为：能开就正常开，开不了至少上面那句在
+    };
     body.appendChild(a);
   }
 
