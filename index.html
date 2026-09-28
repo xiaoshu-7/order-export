@@ -124,6 +124,7 @@
   body[data-view="analyze"] header,
   body[data-view="analyze"] #plats,
   body[data-view="analyze"] #how,
+  body[data-view="analyze"] #setup,
   body[data-view="analyze"] #faq,
   body[data-view="analyze"] .stats{display:none}
   /* 分析块自己带标题行（「把导出的表格拖进来」），教程那份 #analyze>.hd 让它别重复 */
@@ -438,6 +439,7 @@
     <div class="links">
       <a href="#plats">平台支持</a>
       <a href="#how">使用方法</a>
+      <a href="#setup">环境安装</a>
       <a href="#faq">常见问题</a>
     </div>
   </div>
@@ -470,6 +472,7 @@
     </div>
     <a href="#plats" class="on">平台支持</a>
     <a href="#how">使用方法</a>
+    <a href="#setup">环境安装</a>
     <a href="#faq">常见问题</a>
   </aside>
   <div class="content">
@@ -1513,8 +1516,8 @@ if (typeof window !== 'undefined') {
   </section>
 
   <!-- ---------- FAQ ---------- -->
-  <section id="faq">
-    <div class="hd"><div><h2>常见问题</h2></div></div>
+  <section id="setup">
+    <div class="hd"><div><h2>环境安装</h2></div></div>
 
     <details open>
       <summary>首次使用？先装这两样</summary>
@@ -1539,7 +1542,39 @@ if (typeof window !== 'undefined') {
       </div>
     </details>
 
+
     <details>
+      <summary>要装别的软件吗</summary>
+      <div class="bd">
+        <p><b>不用，一个都不用装。</b>分类、备注、汇总全部在浏览器里算好了，导出的表格双击就能用 Excel / WPS 打开。</p>
+        <p>整个过程只有两样东西：<b>浏览器</b> + <b>篡改猴扩展</b>。不用装客户端、不用注册账号、不用付费。</p>
+        <p class="sub">会动我电脑上的东西吗</p>
+        <p>不会。脚本只读你已经打开的订单页，在你浏览器里生成表格文件，不碰系统、不占后台。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>有新版本了，怎么更新</summary>
+      <div class="bd">
+        <p><b>回到本页最上面「首次使用」那一节，再点一次安装按钮就行 —— 不用先卸载。</b>
+          篡改猴会用新版覆盖旧版，你的历史数据不受影响。</p>
+
+        <p class="sub">怎么确认装上了</p>
+        <p>点篡改猴图标 → 管理面板，列表里能看到脚本的版本号（当前是 <b>3.9.3</b>）。对不上就是没覆盖成功。</p>
+
+        <p class="sub">点了没反应，或者反而开始下载文件？</p>
+        <p>篡改猴只在<b>你点网页里的链接</b>时才接管安装。把 <code>.user.js</code> 的地址直接丢进浏览器，
+          浏览器会把它当普通文件下载，弹「保留 / 放弃」—— 装不上。</p>
+        <p>所以请从<b>本页</b>点按钮；还不行就走「首次使用」里第 ③ 步的第二条路（篡改猴的从网址安装）。</p>
+      </div>
+    </details>
+
+  </section>
+
+  <section id="faq">
+    <div class="hd"><div><h2>常见问题</h2></div></div>
+
+    <details open>
       <summary>面板没出现怎么办</summary>
       <div class="bd">
         <ul>
@@ -1560,6 +1595,20 @@ if (typeof window !== 'undefined') {
           <li><b>是订单列表页吗？</b>商品详情页上没有订单卡片。</li>
         </ul>
         <p>都不行就发一份诊断信息给我们 —— 多半是这个平台的页面结构还没适配，我们会按它调。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>页面上明明有订单，脚本却说没找到</summary>
+      <div class="bd">
+        <p>先按顺序排除三件事：<b>登录了吗</b>、<b>页面加载完了吗</b>（等两秒）、<b>确实是订单列表页吗</b>。</p>
+        <p>都不是的话，多半是这个平台的订单页结构比较特别（有些平台的订单页内容藏得比较深，脚本一时读不到）。
+          这类平台我们会在上方的平台列表里标成「<b>待验证</b>」。</p>
+        <p class="sub">两条路</p>
+        <ul>
+          <li>先看这个平台有没有<b>自带的导出按钮</b> —— 淘宝、1688 这类都有，直接用它更省事。</li>
+          <li>点面板里的「<b>抓不到？导出诊断信息</b>」，把导出的那个 txt 发给我们，就能针对它适配。</li>
+        </ul>
       </div>
     </details>
 
@@ -1588,21 +1637,11 @@ if (typeof window !== 'undefined') {
         <p><b>看表格里的「备注」列。</b>有字就说明这行可能不准，原因直接写在里面：</p>
         <ul>
           <li><b>没认出金额，必须人工补</b> —— 不补的话合计算少</li>
-          <li><b>没找到「实付」，用的是标价</b> —— 常见于「先用后付」单，这钱可能还没付</li>
-          <li><b>页面有多个价格且没标「实付」</b> —— 取了最小的那个（实付一般 ≤ 标价），建议核对</li>
-          <li><b>已退款，不计入实际支出</b></li>
+          <li><b>价格取了最低档</b> —— 多规格商品，脚本按最低价填的</li>
+          <li><b>疑似重复（同订单号）</b> —— 同一单出现了两次，已合并</li>
         </ul>
-        <p>备注是空的那行就是完全可信的，不用管。</p>
-      </div>
-    </details>
-
-    <details>
-      <summary>要装别的软件吗</summary>
-      <div class="bd">
-        <p><b>不用，一个都不用装。</b>分类、备注、汇总全部在浏览器里算好了，导出的表格双击就能用 Excel / WPS 打开。</p>
-        <p>整个过程只有两样东西：<b>浏览器</b> + <b>篡改猴扩展</b>。不用装客户端、不用注册账号、不用付费。</p>
-        <p class="sub">会动我电脑上的东西吗</p>
-        <p>不会。脚本只读你已经打开的订单页，在你浏览器里生成表格文件，不碰系统、不占后台。</p>
+        <p class="sub">怎么快速找</p>
+        <p>把表格按「备注」列排序，有字的会聚在一起，逐行看一遍就行。</p>
       </div>
     </details>
 
@@ -1620,36 +1659,6 @@ if (typeof window !== 'undefined') {
         <p class="sub">「链接已确认」是什么意思</p>
         <p>意思是这个平台的订单页<b>地址核对过、能打开</b>，但导出数据的准确性<b>还没人工逐行核对</b>。
           第一次用先看两行金额对不对就行。</p>
-      </div>
-    </details>
-
-    <details>
-      <summary>页面上明明有订单，脚本却说没找到</summary>
-      <div class="bd">
-        <p>先按顺序排除三件事：<b>登录了吗</b>、<b>页面加载完了吗</b>（等两秒）、<b>确实是订单列表页吗</b>。</p>
-        <p>都不是的话，多半是这个平台的订单页结构比较特别（有些平台的订单页内容藏得比较深，脚本一时读不到）。
-          这类平台我们会在上方的平台列表里标成「<b>待验证</b>」。</p>
-        <p class="sub">两条路</p>
-        <ul>
-          <li>先看这个平台有没有<b>自带的导出按钮</b> —— 淘宝、1688 这类都有，直接用它更省事。</li>
-          <li>点面板里的「<b>抓不到？导出诊断信息</b>」，把导出的那个 txt 发给我们，就能针对它适配。</li>
-        </ul>
-      </div>
-    </details>
-
-    <details>
-      <summary>有新版本了，怎么更新</summary>
-      <div class="bd">
-        <p><b>回到本页最上面「首次使用」那一节，再点一次安装按钮就行 —— 不用先卸载。</b>
-          篡改猴会用新版覆盖旧版，你的历史数据不受影响。</p>
-
-        <p class="sub">怎么确认装上了</p>
-        <p>点篡改猴图标 → 管理面板，列表里能看到脚本的版本号（当前是 <b>3.9.3</b>）。对不上就是没覆盖成功。</p>
-
-        <p class="sub">点了没反应，或者反而开始下载文件？</p>
-        <p>篡改猴只在<b>你点网页里的链接</b>时才接管安装。把 <code>.user.js</code> 的地址直接丢进浏览器，
-          浏览器会把它当普通文件下载，弹「保留 / 放弃」—— 装不上。</p>
-        <p>所以请从<b>本页</b>点按钮；还不行就走「首次使用」里第 ③ 步的第二条路（篡改猴的从网址安装）。</p>
       </div>
     </details>
 
@@ -1679,6 +1688,7 @@ if (typeof window !== 'undefined') {
         </ul>
       </div>
     </details>
+
   </section>
 
   </div>
