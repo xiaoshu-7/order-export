@@ -113,6 +113,11 @@
   body[data-view="analyze"] .anx .top{display:none}
   /* 分析块下方那条分隔线在这里没有下一块可分隔 */
   body[data-view="analyze"] #analyze{border-bottom:0;padding-bottom:0}
+  /* 反过来：教程视图下把整个分析区藏掉。
+     ⚠ 这一条以前【漏了】—— 于是滚到页面底部时分析区（含拖拽框）会一直
+     露在教程下面，看着像「没切视图、只是滚下去了」。分析区只能由
+     首屏那个按钮进（View.go('analyze')），不存在「滚着滚着看见」的情况。 */
+  body:not([data-view="analyze"]) #analyze{display:none}
 
   /* ---------- 顶部导航 ---------- */
   nav{
@@ -415,7 +420,6 @@
     <div class="links">
       <a href="#plats">平台支持</a>
       <a href="#how">使用方法</a>
-      <a href="#analyze">消费分析</a>
       <a href="#faq">常见问题</a>
     </div>
   </div>
@@ -441,7 +445,6 @@
     <span class="lbl">目录</span>
     <a href="#plats" class="on">平台支持</a>
     <a href="#how">使用方法</a>
-    <a href="#analyze">消费分析</a>
     <a href="#faq">常见问题</a>
   </aside>
   <div class="content">
@@ -2298,10 +2301,15 @@ document.addEventListener('keydown', function (e) {
   var btn = document.getElementById('tocbtn');
 
   function upd() {
-    // 非教程视图（'' 以外）由视图状态说了算，不看滚动 —— 见上面 VIEW_LINKS 的注释
-    var i = VIEW_LINKS.indexOf(View.cur());
-    if (i >= 0) {
-      links.forEach(function (a, k) { a.classList.toggle('on', k === i); });
+    // 非教程视图（'' 以外）由视图状态说了算，不看滚动 —— 见上面 VIEW_LINKS 的注释。
+    // ⚠ 这里必须按 href 匹配，不能按索引（links[k] ↔ VIEW_LINKS[i]）：
+    //   视图切换后目录里的链接可以被移除（比如「消费分析」只留首屏按钮入口），
+    //   一旦两边长度不一致，索引法会把高亮戴到错误的项上（实测会误亮「常见问题」）。
+    var v = View.cur();
+    if (v) {
+      links.forEach(function (a) {
+        a.classList.toggle('on', a.getAttribute('href') === '#' + v);
+      });
       return;
     }
     var y = window.scrollY + 140, cur = 0;
@@ -2361,8 +2369,10 @@ showPanel(null);
        分析视图里教程那些区块是 display:none，它们的 offsetTop 会失效/归零，
        滚动算法会误判成「最后一节」。
    ⚠ 这里的 key 是【不带 # 的裸名】，要和 View.cur() 的返回值一致，
-     不能写 '#analyze'（写了就永远匹配不上，高亮会掉回滚动算法）。 */
-var VIEW_LINKS = ['plats', 'how', 'analyze', 'faq'];
+     不能写 '#analyze'（写了就永远匹配不上，高亮会掉回滚动算法）。
+   ⚠ 现在只当「合法视图名清单」用（给测试钩子看）。目录高亮已改成按 href 匹配，
+     不再依赖这份数组的下标 —— 目录里的链接增删都不会再串位。 */
+var VIEW_LINKS = ['analyze'];
 var View = (function () {
   var cur = '';                                  // 当前视图；'' 交给滚动高亮
   var b = document.body;
