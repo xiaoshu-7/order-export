@@ -66,13 +66,18 @@
   .content{flex:1;min-width:0}
   .content>.wrap{max-width:none;padding:0 0 0 30px}
   @media(max-width:640px){.content>.wrap{padding-left:0}}
-  /* 窄屏：目录收进顶栏按钮 + 抽屉 */
+  /* 目录按钮：全宽度都显示。
+     宽屏（>900px）点它 = 收起/展开常驻左栏；窄屏（<=900px）点它 = 弹抽屉。
+     ⚠ 之前只在窄屏显示，宽屏用户找不到「目录」入口 —— 现在全宽度常驻。 */
   .tocbtn{
-    display:none;align-items:center;gap:6px;flex:none;
+    display:inline-flex;align-items:center;gap:6px;flex:none;
     font:inherit;font-size:14px;color:var(--ink2);cursor:pointer;
     background:var(--bg3);border:0;border-radius:8px;padding:7px 12px;
   }
   .tocbtn:hover{background:var(--line2)}
+  /* 宽屏收起态：左栏整体隐藏，内容区拿回空间 */
+  .shell.toc-off>.toc{display:none}
+  .shell.toc-off{padding-left:28px}
   @media(max-width:900px){
     .toc{
       position:fixed;top:0;left:0;bottom:0;width:250px;max-height:none;z-index:200;
@@ -81,7 +86,6 @@
       box-shadow:0 0 40px rgba(0,0,0,.10);
     }
     .toc.open{transform:none}
-    .tocbtn{display:inline-flex}
     .content>.wrap{padding-left:0}
     .mask{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:150;
       opacity:0;pointer-events:none;transition:opacity .24s}
@@ -133,6 +137,16 @@
     display:flex;align-items:center;gap:28px}
   @media(max-width:900px){nav .in{padding:0 28px;gap:22px}}
   @media(max-width:640px){nav .in{padding:0 18px;gap:18px}}
+  /* 宽屏：按钮排在品牌名前面，会把它往右挤、破坏「品牌名与左栏目录对齐」。
+     所以让按钮整体【向左溢出】(28px 抵掉 nav 的左 padding，再补 6px 当透气间隔)，
+     这样按钮左移、品牌名位置保持不动。 */
+  @media(min-width:901px){
+    nav .in>.tocbtn{margin-left:-34px;margin-right:0}
+  }
+  /* 窄屏：没有目录、padding 对称，不需要负外边距；只补一点右间距透气 */
+  @media(max-width:900px){
+    nav .in>.tocbtn{margin-right:4px}
+  }
   .brand{display:flex;align-items:center;gap:9px;font-size:15px;
     font-weight:600;letter-spacing:-.012em;text-decoration:none;flex:none}
   .brand .dot{width:20px;height:20px;border-radius:6px;
@@ -2317,6 +2331,10 @@ document.addEventListener('keydown', function (e) {
   var secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
   var mask = document.getElementById('mask');
   var btn = document.getElementById('tocbtn');
+  var shell = document.querySelector('.shell');
+  // 宽屏断点，必须与 CSS 里的 900px 保持一致 —— 两处不一致就会出现
+  // 「按钮在但点了没反应」或者「抽屉开了但 CSS 当宽屏处理」这类空档。
+  var WIDE = 901;
 
   function upd() {
     // 非教程视图（'' 以外）由视图状态说了算，不看滚动 —— 见上面 VIEW_LINKS 的注释。
@@ -2340,6 +2358,7 @@ document.addEventListener('keydown', function (e) {
 
   // 收起时把 aria-expanded 也同步回去 —— 光给 <button> 加 aria-label 不够，
   // 读屏用户要靠这个状态知道「现在目录是开还是关」。
+  function isWide() { return window.innerWidth >= WIDE; }
   function setOpen(on) {
     toc.classList.toggle('open', on);
     mask.classList.toggle('on', on);
@@ -2348,15 +2367,44 @@ document.addEventListener('keydown', function (e) {
       btn.setAttribute('aria-label', on ? '收起目录' : '打开目录');
     }
   }
+  // 宽屏：左栏常驻，按钮切换「收起/展开」——用 shell 上的类控制，不走抽屉。
+  //       收起态要清掉 open/mask，防止从窄屏拖宽过来时残留一层遮罩。
+  function setWideCollapsed(off) {
+    if (!shell) return;
+    shell.classList.toggle('toc-off', off);
+    toc.classList.remove('open');
+    mask.classList.remove('on');
+    if (btn) {
+      btn.setAttribute('aria-expanded', off ? 'false' : 'true');
+      btn.setAttribute('aria-label', off ? '打开目录' : '收起目录');
+    }
+  }
   function close() { setOpen(false); }
   if (btn) {
-    btn.setAttribute('aria-expanded', 'false');
+    // 初始态按宽度给：宽屏目录可见 → aria-expanded=true；窄屏收起 → false。
+    // ⚠ 之前无条件 setOpen(false)，宽屏下会谎报「目录是收起的」，读屏用户会困惑。
+    if (isWide()) {
+      btn.setAttribute('aria-expanded', 'true');
+      btn.setAttribute('aria-label', '收起目录');
+    } else {
+      setOpen(false);
+    }
     // 再点一下要能收起 —— 之前写死了只 add，点第二次没反应
-    btn.onclick = function () { setOpen(!toc.classList.contains('open')); };
+    btn.onclick = function () {
+      if (isWide()) {
+        setWideCollapsed(!shell.classList.contains('toc-off'));
+      } else {
+        setOpen(!toc.classList.contains('open'));
+      }
+    };
   }
   if (mask) mask.onclick = close;
   links.forEach(function (a) { a.addEventListener('click', close); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  // 跨越断点时复位，避免「宽屏收起了 -> 拖窄 -> 抽屉状态串味」。
+  window.addEventListener('resize', function () {
+    if (isWide()) { toc.classList.remove('open'); mask.classList.remove('on'); }
+  });
 })();
 
 /* ---------- 数据条 ---------- */
